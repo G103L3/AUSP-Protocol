@@ -1,0 +1,13 @@
+{
+    "files.associations": {
+        "complex_g3.h": "c",
+        "global_parameters.h": "c",
+        "math.h": "c",
+        "gtzl.h": "c",
+        "arduino.h": "c",
+        "frequencies_comparator.h": "c",
+        "hardwareserial.h": "c",
+        "adc.h": "c",
+        "i2s.h": "c"
+    }
+}
