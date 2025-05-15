@@ -8,6 +8,7 @@
         "frequencies_comparator.h": "c",
         "hardwareserial.h": "c",
         "adc.h": "c",
-        "i2s.h": "c"
+        "i2s.h": "c",
+        "audio_driver.h": "c"
     }
 }

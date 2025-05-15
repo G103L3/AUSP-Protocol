@@ -21,6 +21,7 @@
 #include "frequencies_comparator.h"
 #include "serial_bridge.h"
 #include "leds.h"
+#include "audio_driver.h"
 //#include <HardwareSerial.h>
 
 #include "global_parameters.h"
@@ -96,8 +97,12 @@ void setup() {
     Serial.begin(115200);
     memset(sequence, 0, G_SEQUENCE_LENGTH);
 
+    /*Inizializzazione audio driver I2S*/
+    audio_init();
     /* Inizializzazione reader DMA */
     reader_init();
+
+
 
     status_flag = 1;
 }
@@ -110,4 +115,6 @@ void loop() {
         decoder_operations();
         data_ready = 0;
     }
+    //play_tone(300);
+
 }
