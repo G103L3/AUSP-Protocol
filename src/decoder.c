@@ -9,15 +9,20 @@ extern "C" {
 #include "decoder.h"
 #include "string.h"
 #include "leds.h"
+#include <stdlib.h>
+
+//Test
+double sum_bins = 0, sum_amp = 0, sum_bins2 = 0, sum_bins_amp = 0, slope = 0, intercept = 0;
+int regress_count = 0;
+
 
 double const T = 1.0 / FS;  /* Sampling interval */
 /* Amplitude thresholds */
-double amplitude_threshold[] = {75000, 75000, 75000};
+double amplitude_threshold[] = {50000, 50000, 50000};
 
 /* AUSP FREQUENCIES */
-
-int ausp_freq[] = {1200, 4600, 7500};
-int const freq_tolerance = 60; /* Frequency tolerance due to FFT resolution */
+int ausp_freq[] = {1000, 2000, 3000, 4000, 5500, 7000, 8000, 9000, 10000};
+double const freq_tolerance = (double)G_SAMPLE_RATE/(double)G_ARRAY_SIZE; /* Frequency tolerance due to FFT resolution */
 
 void serial_init(unsigned long baudrate);
 void serial_write_char(char c);
@@ -45,18 +50,12 @@ struct_tone_frequencies decode_dtmf(complex_g3_t *data)
 	int results[] = {0, 0, 0};
 
 	turn_off();
-	/*Plotting delle frequenze a Scopo di Test*/
-	for (int i = 0; i < NN/2; i++) {
-		double freq = (double)(FS * i) / NN;
-		double amp = complex_magnitude(data[i]);
-		//serial_write_formatted(">Spectrum:%f:%f|xy\n", freq, amp);
-		//serial_write_formatted(">Bins Spectrum:%d:%f|xy\n", i, amp);
 
+	for (int i = 0; i < sizeof(ausp_freq)/sizeof(int); i++) {
+		int range_start = floor(ausp_freq[i]/(freq_tolerance));
+		int range_end = range_start+1;
+		check_active_frequencies(results, data, range_start, range_end, i);
 	}
-	
-	check_active_frequencies(results, data, 25, 26, 0);
-	check_active_frequencies(results, data, 98, 99, 1);
-	check_active_frequencies(results, data, 159, 161, 2);
 
 	result.low = results[0];
 	result.mid = results[1];
@@ -73,9 +72,12 @@ int* check_active_frequencies(int* results_, complex_g3_t *data, int  bin_1, int
 	{
 		double freq = (double)(FS * j) / NN;
 		double amp = complex_magnitude(data[j]);
-		//serial_write_formatted("Freq: %f Amp: %f  Bin: %d  \n", freq, amp, j);
+		//regress_linear_update(j, amp);
+		//serial_write_formatted(">Spectrum:%f:%f|xy\n", freq, amp);
+		//serial_write_formatted(">Bins Spectrum:%d:%f|xy\n", j, amp, freq_tolerance);
+		double dynamic_amplitude_threshold = (-301.751324*j)+48531.689491;
 
-		if (amp > amplitude_threshold[id]) 
+		if (amp > dynamic_amplitude_threshold) 
 		{
 			//serial_write_formatted("Freq: %f Amp: %f Bin: %d Around: ", freq, amp, j);
 			//Capisce se il bin che sto analizzando è il maggiore di tutto il suo intorno
@@ -97,8 +99,8 @@ int* check_active_frequencies(int* results_, complex_g3_t *data, int  bin_1, int
 									detected_freq.frequency, detected_freq.estimated_amplitude);*/
 				
 				// Verifica se la frequenza rilevata è vicina alla frequenza target e che la amplitude stimata sia maggiore del threshold
-				if ((fabs(detected_freq.frequency - ausp_freq[id]) <= freq_tolerance) && (detected_freq.estimated_amplitude > amplitude_threshold[id])) {
-					//serial_write_formatted("Detected amp: %f", detected_freq.estimated_amplitude);
+				serial_write_formatted("Info: Detected amp: %f %f %d", detected_freq.estimated_amplitude, fabs(detected_freq.frequency - ausp_freq[id]), freq_tolerance);
+				if ((detected_freq.estimated_amplitude > dynamic_amplitude_threshold)) {
 					results_[id] = ausp_freq[id];
 					turn_blue(1);
 				} else {
@@ -155,6 +157,27 @@ struct_interpolated_frequency interpolate_peak_frequency(complex_g3_t *data, int
 	frequency.estimated_amplitude = interpolated_amplitude;
     return frequency;
 }
+
+
+void regress_linear_update(const int bin, const double amplitude) {
+    sum_bins += bin;
+    sum_amp += amplitude;
+    sum_bins2 += bin * bin;
+    sum_bins_amp += bin * amplitude;
+	regress_count++;
+    
+    double denominator = regress_count * sum_bins2 - sum_bins * sum_bins;
+    if (denominator == 0) {
+        serial_write_string("Error: denominator zero, probably all bin values are equal\n");
+        return -2;
+    }
+    
+    slope = (regress_count * sum_bins_amp - sum_bins * sum_amp) / denominator;
+    intercept = (sum_amp - (slope) * sum_bins) / regress_count;
+	serial_write_formatted("Slope: %f  Intercept: %f \n", slope, intercept);
+    return 0;  // OK
+}
+
 
 #ifdef __cplusplus
 }

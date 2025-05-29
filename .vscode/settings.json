@@ -9,6 +9,12 @@
         "hardwareserial.h": "c",
         "adc.h": "c",
         "i2s.h": "c",
-        "audio_driver.h": "c"
+        "audio_driver.h": "c",
+        "stdlib.h": "c",
+        "decoder.h": "c",
+        "task.h": "c",
+        "reading_queue.h": "c",
+        "stdbool.h": "c",
+        "sync_controller.h": "c"
     }
 }

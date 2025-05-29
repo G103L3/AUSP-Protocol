@@ -14,15 +14,10 @@ extern "C" {
  #include <freertos/FreeRTOS.h>
  #include <freertos/task.h>
  #include <esp_adc_cal.h>
- 
+ #include "reading_queue.h"
+ #include "global_parameters.h"
 
- 
- /* Buffer declarations */
- static complex_g3_t main_array[ARRAY_ELEMENTS];
- static complex_g3_t secondary_array[ARRAY_ELEMENTS];
- static complex_g3_t *current_data;
- 
- complex_g3_t *array_ready;
+
  volatile int data_ready = 0;
  volatile int status_flag = 1;
  static int counter = 0;
@@ -31,18 +26,12 @@ extern "C" {
  /* Task handle */
  static TaskHandle_t reader_task_handle = NULL;
  
- /*! \brief Swap current and ready arrays */
- static void swap_array(void) {
-     array_ready = current_data;
-     current_data = (current_data == main_array) ? secondary_array : main_array;
- }
- 
  /*! \brief Task to continuously read ADC values via I2S */
  static void reader_task(void *param) {
      size_t bytes_read;
      uint16_t dma_buffer[DMA_BUFFER_SIZE / 2]; // 2 bytes per sample
  
-     while (1) {
+     while (1) { //Purtroppo non si può mettere a 0 e quindi non si può avere controllo con status flag
          i2s_read(I2S_PORT, (void*)dma_buffer, DMA_BUFFER_SIZE, &bytes_read, portMAX_DELAY);
  
          int samples = bytes_read / 2;
@@ -50,15 +39,16 @@ extern "C" {
              double val = ((double)dma_buffer[i] - bias) * 2.0;
              //serial_write_formatted("ADC: %f \n", val);
 
- 
-             current_data[counter].re = val;
-             current_data[counter].im = 0.0;
+             complex_g3_t sample;  // Stack-allocated variable
+             sample.re = val;
+             sample.im = 0.0;
+             reading_queue_enqueue(&sample);  // Pass address of the stack variable
+             
              counter++;
- 
-             if (counter >= ARRAY_ELEMENTS) {
-                 data_ready = 1;
-                 swap_array();
-                 counter = 0;
+             if(counter == 256){
+                //serial_write_formatted("add = %d \n", counter);
+                data_ready = 1;
+                counter = 0;
              }
          }
      }
@@ -101,8 +91,7 @@ extern "C" {
      // Enable ADC in I2S mode
      i2s_adc_enable(I2S_PORT);
  
-     // Prepare data arrays
-     current_data = main_array;
+     // Prepare data triggers
      data_ready = 0;
      counter = 0;
  

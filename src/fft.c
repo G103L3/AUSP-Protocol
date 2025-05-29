@@ -114,6 +114,7 @@ void FFT_calculate (complex_g3_t *x, long N, complex_g3_t *X, complex_g3_t *scra
 complex_g3_t* FFT_simple (complex_g3_t* x, int N)
 {
 	FFT_get_twiddle_factors(N);
+
 	FFT_calculate(x, N, out, scratch, twiddles);
 
 	return out;	/* Note: this returns a pointer to a global array */

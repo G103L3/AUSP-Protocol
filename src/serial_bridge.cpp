@@ -9,6 +9,7 @@
 
  #include <Arduino.h>
 
+ int mode = 1; //2: Stampa Debug-Info  1: Stampa solo Info 0: Non stampa nulla
  extern "C" {
      // Initialize serial communication with the specified baud rate
      void serial_init(unsigned long baudrate) {
@@ -24,8 +25,15 @@
      }
  
      // Send a string over the serial port
-     void serial_write_string(const char* str) {
+     bool serial_write_string(const char* str) {
+        if((strstr(str, "Debug") != NULL) && mode <= 1){
+            return false;
+        }
+        if((strstr(str, "Info") != NULL) && (strstr(str, ">") != NULL) && mode == 0){
+            return false;
+        }
          Serial.print(str);
+         return true;
      }
 
      void serial_write_formatted(const char* format, ...) {
