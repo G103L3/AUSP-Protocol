@@ -47,7 +47,12 @@ struct_tone_frequencies decode_dtmf(complex_g3_t *data)
 {
 	struct_tone_frequencies result;
 	serial_init(115200);
-	int results[] = {0, 0, 0};
+	int results[3][3] = 
+	{
+		{0, 0, 0},
+		{0, 0, 0},
+		{0, 0, 0}
+	};
 
 	turn_off();
 
@@ -103,19 +108,15 @@ int* check_active_frequencies(int* results_, complex_g3_t *data, int  bin_1, int
 				// Verifica se la frequenza rilevata è vicina alla frequenza target e che la amplitude stimata sia maggiore del threshold
 				serial_write_formatted("Info: Detected amp: %f diff_freq: %f tolerance: %f \n", detected_freq.estimated_amplitude, fabs(detected_freq.frequency - ausp_freq[id]), freq_tolerance);
 				if ((fabs(detected_freq.frequency - ((FS*bin_1) / NN)) <= freq_tolerance) && (detected_freq.estimated_amplitude > dynamic_amplitude_threshold)) {
-					results_[id] = ausp_freq[id];
+					results_[(id / 3) * 3 + (id % 3)] = ausp_freq[id];
 					turn_blue(1);
 					serial_write_formatted("Info: freq %f amp: %f \n", detected_freq.frequency, detected_freq.estimated_amplitude);
 				} else {
 					turn_red(1);
-					results_[id] = -1;
+					results_[(id / 3) * 3 + (id % 3)] = -1;
 				}
 				
 
-			}
-			else if (results_[id] == 0 )
-			{
-				results_[id] = 0;
 			}
 
 
