@@ -38,7 +38,7 @@ bool detect_tones() {
         serial_write_formatted("Debug: Error in reading_queue_range Sync Controller\n");
         return false;
     }
-    serial_write_formatted("Debug: Success in reading_queue_range Sync Controller\n");
+    //serial_write_formatted("Debug: Success in reading_queue_range Sync Controller\n");
 
 
 // Stampa dei valori in window_cut
@@ -52,7 +52,7 @@ delay(5);
     // Decode the frequencies from the FFT output
     tone_frequencies = decode_dtmf(out);    
 
-    serial_write_formatted("Info: %d - %d - %d \n", tone_frequencies.low, tone_frequencies.mid, tone_frequencies.high);
+    //serial_write_formatted("Info: %d - %d - %d \n", tone_frequencies.low, tone_frequencies.mid, tone_frequencies.high);
 
     return true;
 }

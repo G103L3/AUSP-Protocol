@@ -63,6 +63,18 @@
      /* Inizializzazione reader DMA */
      reader_init();  
      //reader_test_init();
+     play_two_tones(1000, 4000);
+     play_two_tones(4000, 8000);
+     play_two_tones(5500, 9000);
+     play_two_tones(7000, 3000);
+     play_two_tones(8000, 4000);
+     play_two_tones(9000, 5500);
+     play_two_tones(1000, 7000);
+     play_two_tones(2000, 5500);
+     play_two_tones(3000, 7000);
+
+
+     
   }
  
  int temp_counter = 0; //da rimuovere
@@ -75,6 +87,6 @@
          temp_counter++;
          data_ready = 0;
      }
-     //play_tone(300);
+     //play_two_tones(1000);
  
  }

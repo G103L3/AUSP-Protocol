@@ -76,15 +76,17 @@ int* check_active_frequencies(int* results_, complex_g3_t *data, int  bin_1, int
 		//serial_write_formatted(">Spectrum:%f:%f|xy\n", freq, amp);
 		//serial_write_formatted(">Bins Spectrum:%d:%f|xy\n", j, amp, freq_tolerance);
 		double dynamic_amplitude_threshold = (-301.751324*j)+48531.689491;
-
 		if (amp > dynamic_amplitude_threshold) 
 		{
+			serial_write_formatted("Info: Freq: %f Amplitude: %f  Threshold: %f \n", freq, amp, dynamic_amplitude_threshold);
+
 			//serial_write_formatted("Freq: %f Amp: %f Bin: %d Around: ", freq, amp, j);
 			//Capisce se il bin che sto analizzando è il maggiore di tutto il suo intorno
-			for(i = j-6; i < j + 6 && complex_magnitude(data[i]) <= amp; i++){	
+			for(i = j-6; i < j + 6 && complex_magnitude(data[i]) <= amp; i++) {				
 				//serial_write_formatted("%f, ", complex_decibels(data[i]));
 				//Sophisticated system to check if there are a max value, it doesn't need any variable.
 				//amp is the bigger if i == j+6
+				//serial_write_formatted(">Spectrum (+-)6:%f:%f|xy\n", ((double)(FS * i) / NN), complex_magnitude(data[i]));
 			}
 
 			//serial_write_formatted(" I: %d J+6: %d\n", i, (j+6));
@@ -99,10 +101,11 @@ int* check_active_frequencies(int* results_, complex_g3_t *data, int  bin_1, int
 									detected_freq.frequency, detected_freq.estimated_amplitude);*/
 				
 				// Verifica se la frequenza rilevata è vicina alla frequenza target e che la amplitude stimata sia maggiore del threshold
-				serial_write_formatted("Info: Detected amp: %f %f %d", detected_freq.estimated_amplitude, fabs(detected_freq.frequency - ausp_freq[id]), freq_tolerance);
-				if ((detected_freq.estimated_amplitude > dynamic_amplitude_threshold)) {
+				serial_write_formatted("Info: Detected amp: %f diff_freq: %f tolerance: %f \n", detected_freq.estimated_amplitude, fabs(detected_freq.frequency - ausp_freq[id]), freq_tolerance);
+				if ((fabs(detected_freq.frequency - ((FS*bin_1) / NN)) <= freq_tolerance) && (detected_freq.estimated_amplitude > dynamic_amplitude_threshold)) {
 					results_[id] = ausp_freq[id];
 					turn_blue(1);
+					serial_write_formatted("Info: freq %f amp: %f \n", detected_freq.frequency, detected_freq.estimated_amplitude);
 				} else {
 					turn_red(1);
 					results_[id] = -1;
@@ -136,6 +139,8 @@ struct_interpolated_frequency interpolate_peak_frequency(complex_g3_t *data, int
     double alpha = complex_magnitude(data[peak_bin-1]);
     double beta = complex_magnitude(data[peak_bin]);
     double gamma = complex_magnitude(data[peak_bin+1]);
+
+	serial_write_formatted("Info: Alpha %f Beta %f Gamma %f\n", alpha, beta, gamma);
     
     // Formula dell'interpolazione parabolica
     double p = 0.5 * (alpha - gamma) / (alpha - 2 * beta + gamma);

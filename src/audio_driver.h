@@ -28,12 +28,38 @@ void audio_init();
 /**
  * @brief Generates and plays a sine wave tone of the specified frequency through the MAX98357A.
  *
- * This function creates a stereo sine wave buffer at the requested frequency and sends it via I2S.
- * It blocks while transmitting one full cycle of the waveform.
+ * This function creates a stereo audio buffer containing a single sine wave at the specified
+ * frequency and sends it via I2S. The output is scaled to fit within 16-bit audio limits.
+ * It blocks while transmitting one full cycle of the waveform with a duration of 0.0106667 seconds.
  *
- * @param frequency Frequency in Hz of the tone to generate and play.
+ * @param frequency Frequency in Hz of the sine wave to generate and play.
  */
+
 void play_tone(int frequency);
+
+/**
+ * @brief Generates and plays a composite tone made of two sine wave frequencies through the MAX98357A.
+ *
+ * This function creates a stereo audio buffer containing the sum of two sine waves at the specified
+ * frequencies and sends it via I2S. The output is normalized to prevent clipping. It blocks while 
+ * transmitting one full cycle of the waveform with a duration of 0.0106667 seconds.
+ *
+ * @param freq1 Frequency in Hz of the first sine wave.
+ * @param freq2 Frequency in Hz of the second sine wave.
+ */
+void play_two_tones(int freq1, int freq2);
+
+/**
+ * @brief Generates and plays a composite tone made of nine sine wave frequencies through the MAX98357A.
+ *
+ * This function creates a stereo audio buffer containing the sum of nine sine waves at the specified
+ * frequencies and sends it via I2S. The output is normalized to prevent clipping. It blocks while 
+ * transmitting one full cycle of the waveform with a duration of 0.0106667 seconds.
+ *
+ * @param freqs Array of 9 integer values representing the frequencies in Hz of the sine waves to combine.
+ */
+
+void play_nine_tones(const int freqs[9]);
 
 #ifdef __cplusplus
 }

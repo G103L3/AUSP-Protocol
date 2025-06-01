@@ -42,37 +42,74 @@ void audio_init() {
     i2s_set_pin(I2S_NUM, &pin_config);
 }
 
-/**
- * @brief Generates a stereo sine wave buffer and sends it through I2S.
- *
- * I create a buffer that represents one complete sine wave cycle of the given frequency.
- * This buffer is generated using the sine function, scaled to a 16-bit signed integer range.
- * Then I use i2s_write() to send this buffer to the MAX98357A via I2S.
- *
- * @param frequency The frequency of the tone to be generated, in Hz.
- */
-void play_tone(int frequency) {
-    // Calculate how many samples are needed to produce one cycle of the desired frequency.
-    const int samples_per_cycle = G_SAMPLE_RATE / frequency;
 
-    // Stereo buffer: each sample has two values (left and right).
-    const int buffer_size = samples_per_cycle * 2;
+void play_tone(int frequency) {
+    const float duration = 0.01066667f;  //Duration taken by (512/48000) seconds
+    const int total_samples = (int)(G_SAMPLE_RATE * duration);  
+    const int buffer_size = total_samples * 2;  // Stereo
+
     int16_t buffer[buffer_size];
 
-    // Generate sine wave values for each sample.
-    // Amplitude set to 3000 to avoid clipping when converted to analog.
-    for (int i = 0; i < samples_per_cycle; i++) {
-        int16_t sample = (int16_t)(3000 * sin(2 * PI * i / samples_per_cycle));
+    for (int i = 0; i < total_samples; i++) {
+        float angle = 2 * PI * frequency * i / G_SAMPLE_RATE;
+        int16_t sample = (int16_t)(3000 * sin(angle));
 
-        // Write same sample value to both left and right channels for a mono-like effect.
         buffer[2 * i] = sample;       // Left channel
         buffer[2 * i + 1] = sample;   // Right channel
     }
 
-    // Transmit generated buffer via I2S to the amplifier.
     size_t bytes_written = 0;
     i2s_write(I2S_NUM, buffer, sizeof(buffer), &bytes_written, portMAX_DELAY);
 }
+
+void play_two_tones(int freq1, int freq2) {
+    const float duration = 0.01066667f;  //Duration taken by (512/48000) seconds
+    const int total_samples = (int)(G_SAMPLE_RATE * duration);  
+    const int buffer_size = total_samples * 2;  // Stereo
+
+    int16_t buffer[buffer_size];
+
+    for (int i = 0; i < total_samples; i++) {
+        float angle1 = 2 * PI * freq1 * i / G_SAMPLE_RATE;
+        float angle2 = 2 * PI * freq2 * i / G_SAMPLE_RATE;
+        float mixed = sinf(angle1) + sinf(angle2);
+
+        // Normalizza per evitare saturazione (somma max: 2.0)
+        int16_t sample = (int16_t)(3000 * (mixed / 2.0f));
+
+        buffer[2 * i] = sample;       // Left
+        buffer[2 * i + 1] = sample;   // Right
+    }
+
+    size_t bytes_written = 0;
+    i2s_write(I2S_NUM, buffer, sizeof(buffer), &bytes_written, portMAX_DELAY);
+}
+
+void play_nine_tones(const int freqs[9]) {
+    const float duration = 0.01066667f;  //Duration taken by (512/48000) seconds
+    const int total_samples = (int)(G_SAMPLE_RATE * duration);  
+    const int buffer_size = total_samples * 2;  // Stereo
+
+    int16_t buffer[buffer_size];
+
+    for (int i = 0; i < total_samples; i++) {
+        float mixed = 0.0f;
+        for (int j = 0; j < 9; j++) {
+            float angle = 2 * PI * freqs[j] * i / G_SAMPLE_RATE;
+            mixed += sinf(angle);
+        }
+
+        // Normalizza (somma max: 9.0)
+        int16_t sample = (int16_t)(3000 * (mixed / 9.0f));
+
+        buffer[2 * i] = sample;       // Left
+        buffer[2 * i + 1] = sample;   // Right
+    }
+
+    size_t bytes_written = 0;
+    i2s_write(I2S_NUM, buffer, sizeof(buffer), &bytes_written, portMAX_DELAY);
+}
+
 
 #ifdef __cplusplus
 }
