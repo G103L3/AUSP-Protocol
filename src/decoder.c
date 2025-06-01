@@ -45,9 +45,9 @@ struct_interpolated_frequency interpolate_peak_frequency(complex_g3_t *data, int
 */
 struct_tone_frequencies decode_dtmf(complex_g3_t *data) 
 {
-	struct_tone_frequencies result;
+	struct_tone_frequencies decoded_tones;
 	serial_init(115200);
-	int results[3][3] = 
+	int results_[3][3] = 
 	{
 		{0, 0, 0},
 		{0, 0, 0},
@@ -59,15 +59,15 @@ struct_tone_frequencies decode_dtmf(complex_g3_t *data)
 	for (int i = 0; i < sizeof(ausp_freq)/sizeof(int); i++) {
 		int range_start = floor(ausp_freq[i]/(freq_tolerance));
 		int range_end = range_start+1;
-		check_active_frequencies(results, data, range_start, range_end, i);
+		check_active_frequencies(results_, data, range_start, range_end, i);
 	}
 
-	result.low = results[0];
-	result.mid = results[1];
-	result.high = results[2];
+	memcpy(decoded_tones.master, results_[0], 3 * sizeof(int));
+	memcpy(decoded_tones.slave, results_[1], 3 * sizeof(int));
+	memcpy(decoded_tones.configuration, results_[2], 3 * sizeof(int));
 	
 
-	return result;
+	return decoded_tones;
 }
 
 int* check_active_frequencies(int* results_, complex_g3_t *data, int  bin_1, int bin_2, int id){
@@ -106,14 +106,14 @@ int* check_active_frequencies(int* results_, complex_g3_t *data, int  bin_1, int
 									detected_freq.frequency, detected_freq.estimated_amplitude);*/
 				
 				// Verifica se la frequenza rilevata è vicina alla frequenza target e che la amplitude stimata sia maggiore del threshold
-				serial_write_formatted("Info: Detected amp: %f diff_freq: %f tolerance: %f \n", detected_freq.estimated_amplitude, fabs(detected_freq.frequency - ausp_freq[id]), freq_tolerance);
-				if ((fabs(detected_freq.frequency - ((FS*bin_1) / NN)) <= freq_tolerance) && (detected_freq.estimated_amplitude > dynamic_amplitude_threshold)) {
-					results_[(id / 3) * 3 + (id % 3)] = ausp_freq[id];
+				serial_write_formatted("Info: Detected amp: %f diff_freq: %f tolerance: %f threshold: %f\n", detected_freq.estimated_amplitude, fabs(detected_freq.frequency - ausp_freq[id]), freq_tolerance, dynamic_amplitude_threshold);
+				if ((fabs(detected_freq.frequency - ausp_freq[id]) <= freq_tolerance) && (detected_freq.estimated_amplitude > dynamic_amplitude_threshold)) {
+					results_[(id % 3) * 3 + (id / 3)] = ausp_freq[id];  
 					turn_blue(1);
 					serial_write_formatted("Info: freq %f amp: %f \n", detected_freq.frequency, detected_freq.estimated_amplitude);
 				} else {
 					turn_red(1);
-					results_[(id / 3) * 3 + (id % 3)] = -1;
+					results_[(id % 3) * 3 + (id / 3)] = -1;
 				}
 				
 

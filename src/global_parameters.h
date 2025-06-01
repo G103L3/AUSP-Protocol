@@ -28,9 +28,9 @@
 
 
 typedef struct struct_tone_frequencies {
-    int low;
-    int mid;
-    int high;
+    int master[3];
+    int slave[3];
+    int configuration[3];
 } struct_tone_frequencies;
 
 typedef struct amplitude_profile {

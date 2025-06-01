@@ -15,6 +15,7 @@
         "task.h": "c",
         "reading_queue.h": "c",
         "stdbool.h": "c",
-        "sync_controller.h": "c"
+        "sync_controller.h": "c",
+        "functional": "c"
     }
 }

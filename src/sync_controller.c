@@ -35,7 +35,7 @@ bool detect_tones() {
 
     // Extract a window of samples from the reading queue
     if (!reading_queue_range(start_point, range, window_cut)) {
-        serial_write_formatted("Debug: Error in reading_queue_range Sync Controller\n");
+        serial_write_string("Debug: Error in reading_queue_range Sync Controller\n");
         return false;
     }
     //serial_write_formatted("Debug: Success in reading_queue_range Sync Controller\n");
@@ -52,9 +52,13 @@ delay(5);
     // Decode the frequencies from the FFT output
     tone_frequencies = decode_dtmf(out);    
 
-    //serial_write_formatted("Info: %d - %d - %d \n", tone_frequencies.low, tone_frequencies.mid, tone_frequencies.high);
+    serial_write_formatted("Info: %d %d %d - %d %d %d - %d %d %d\n", tone_frequencies.master[0], tone_frequencies.master[1], tone_frequencies.master[2], tone_frequencies.slave[0], tone_frequencies.slave[1], tone_frequencies.slave[2], tone_frequencies.configuration[0], tone_frequencies.configuration[1], tone_frequencies.configuration[2]);
 
     return true;
+}
+
+int get_bits(struct_tone_frequencies *tones, int *result){
+   // for(int i = 0 ) VADO A DORMIRE LO FACCIO DOMANI
 }
 
 #ifdef __cplusplus
