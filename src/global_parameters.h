@@ -18,7 +18,7 @@
 #define G_ARRAY_SIZE 512
 
 /* Dimensione della finestra scorrevole (coda FIFO) di cui poi verranno analizzati solo 1024 elementi a volta*/
-#define G_WINDOW_SIZE 2048
+#define G_WINDOW_SIZE 256
 
 /* Massima ampiezza ADC a 12-bit */
 #define G_MAX_AMPLITUDE 4096.0
@@ -26,12 +26,26 @@
 #define G_SEQUENCE_LENGTH 100
 #define G_PI 3.14159265358979323846
 
+typedef struct struct_out_tones {
+    int tones[2];
+} struct_out_tones;
 
 typedef struct struct_tone_frequencies {
     int master[3];
     int slave[3];
     int configuration[3];
 } struct_tone_frequencies;
+
+typedef struct struct_sync_frequencies {
+    int list[10];
+} struct_sync_frequencies;
+
+typedef struct struct_tone_bits {
+    int master;
+    int slave;
+    int configuration;
+} struct_tone_bits;
+
 
 typedef struct amplitude_profile {
     int new_profile;

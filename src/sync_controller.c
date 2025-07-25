@@ -4,61 +4,147 @@ extern "C" {
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
+#include <stdbool.h>
 
 #include "complex_g3.h"
 #include "decoder.h"
 #include "fft.h"
+#include "leds.h"
 #include "reading_queue.h"
 #include "sync_controller.h"
+#include "serial_bridge.h"
 #include "global_parameters.h"
 
-/// Starting index for the window cut
+#define PAIR_COUNT 5
+#define SHIFT_AMOUNT 248
+
+double const freq_tolerance_ = (double)G_SAMPLE_RATE / (double)G_ARRAY_SIZE;
+int sync_freq[] = {5200, 3700, 7200, 4200, 6700, 3200, 7700, 5700, 4700, 6200};
+
 int start_point;
-
-/// Number of elements to extract from the queue
 int range;
-
 int temp_counter;
-
-/// Temporary array to store the extracted window
+int last_valid_pair_index = -1;
+int active_freq_flags[10] = {0};  // 1 se la frequenza è stata trovata nella finestra
 complex_g3_t window_cut[WINDOW_SIZE];
 
-
+// Inizializza il controller di sincronizzazione
 void sync_controller_init() {
     start_point = 0;
     range = G_ARRAY_SIZE;
     temp_counter = 0;
+    last_valid_pair_index = -1;
 }
 
-bool detect_tones() {
-    struct_tone_frequencies tone_frequencies;
 
-    // Extract a window of samples from the reading queue
+void analyze_sync_with_pair_tracking() {
+    int active_pairs[PAIR_COUNT] = {0};
+    int active_pair_count = 0;
+
+    // Cerca le coppie simmetriche attive
+    for (int i = 0; i < PAIR_COUNT; i++) {
+        int a = i;
+        int b = 9 - i;
+
+        if (active_freq_flags[a] && active_freq_flags[b]) {
+            active_pairs[i] = 1;
+            active_pair_count++;
+        }
+    }
+
+    if (active_pair_count == 0) {
+        serial_write_string("Nessuna coppia trovata → slittamento\n");
+        start_point += SHIFT_AMOUNT;
+        return;
+    }
+
+    if (active_pair_count > 1) {
+        serial_write_string("Più coppie trovate → slittamento\n");
+        start_point += SHIFT_AMOUNT;
+        return;
+    }
+
+    // Una sola coppia trovata: individua quale
+    int detected_pair = -1;
+    for (int i = 0; i < PAIR_COUNT; i++) {
+        if (active_pairs[i]) {
+            detected_pair = i;
+            break;
+        }
+    }
+
+    if (detected_pair > last_valid_pair_index) {
+        serial_write_formatted("Coppia %d rilevata (attesa >= %d) → OK, aggiornamento\n",
+                               detected_pair, last_valid_pair_index + 1);
+        last_valid_pair_index = detected_pair;
+    } else {
+        serial_write_formatted("Coppia %d rilevata ma non avanzata (attesa > %d) → ignorata\n",
+                               detected_pair, last_valid_pair_index);
+        // Nessuno slittamento
+    }
+}
+
+/**
+ * @file sync_controller.c
+ * @brief Main function for sync analysis.
+ * 
+ * This file contains the implementation of the primary synchronization 
+ * analysis function. It is part of the Project01Giunta project developed 
+ * using PlatformIO.
+ * 
+ * @author Gioele Giunta
+ * @date YYYY-MM-DD
+ * @version 1.0
+ * 
+ * @note Ensure that all dependencies are correctly configured before 
+ *       using this module.
+ */
+void sync_ausp(complex_g3_t *data) {
+
+
+    // Reset flags
+    for (int i = 0; i < 10; i++) active_freq_flags[i] = 0;
+
+    // FFT
+    complex_g3_t *out = FFT_simple(data, WINDOW_SIZE);
+
+
+    struct_tone_frequencies tone_frequencies = decode_ausp(out);
+
+    
+    // Analisi frequenze
+    for (int i = 0; i < 10; i++) {
+        turn_off();
+        int bin = (int)floor(sync_freq[i] / freq_tolerance_);
+        int range_start = bin;
+        int range_end = bin + 1;
+
+        struct_interpolated_frequency f = check_active_frequencies(data, range_start, range_end, i);
+
+        if (f.work &&
+            fabs(f.frequency - sync_freq[i]) <= freq_tolerance_ &&
+            f.estimated_amplitude > f.dynamic_amplitude_threshold) {
+            
+            active_freq_flags[i] = 1;
+
+            turn_blue(1);
+            serial_write_formatted("Frequenza %d trovata (%f Hz)\n", i, f.frequency);
+        }
+    }
+
+    //analyze_sync_with_pair_tracking();
+}
+
+// Funzione di chiamata generale
+bool detect_tones() {
     if (!reading_queue_range(start_point, range, window_cut)) {
-        serial_write_string("Debug: Error in reading_queue_range Sync Controller\n");
+        serial_write_string("Errore lettura campioni da coda\n");
         return false;
     }
-    //serial_write_formatted("Debug: Success in reading_queue_range Sync Controller\n");
 
-
-// Stampa dei valori in window_cut
-/*for (int i = 0; i < range; i++) {
-serial_write_formatted("window_cut[%d].re = %f, window_cut[%d].im = %f\n", i, window_cut[i].re, i, window_cut[i].im);
-delay(5);
-}*/
-    // Perform FFT on the extracted window
-    complex_g3_t *out = FFT_simple(window_cut, WINDOW_SIZE);
-
-    // Decode the frequencies from the FFT output
-    tone_frequencies = decode_dtmf(out);    
-
-    serial_write_formatted("Info: %d %d %d - %d %d %d - %d %d %d\n", tone_frequencies.master[0], tone_frequencies.master[1], tone_frequencies.master[2], tone_frequencies.slave[0], tone_frequencies.slave[1], tone_frequencies.slave[2], tone_frequencies.configuration[0], tone_frequencies.configuration[1], tone_frequencies.configuration[2]);
-
+    sync_ausp(window_cut);
     return true;
-}
-
-int get_bits(struct_tone_frequencies *tones, int *result){
-   // for(int i = 0 ) VADO A DORMIRE LO FACCIO DOMANI
 }
 
 #ifdef __cplusplus

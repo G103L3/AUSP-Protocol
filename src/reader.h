@@ -13,8 +13,6 @@ extern "C" {
 
 #include "complex_g3.h"
 #include "global_parameters.h"
-#include "reading_queue.h"
-
 
 #define ARRAY_ELEMENTS G_ARRAY_SIZE
 #define SAMPLE_RATE G_SAMPLE_RATE
@@ -27,7 +25,7 @@ extern "C" {
 
 extern volatile int data_ready;
 extern volatile int status_flag;
-
+extern complex_g3_t *array_ready;
 
 void reader_init(void);
 

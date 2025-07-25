@@ -16,8 +16,7 @@
  #include "reader.h"
  #include "fft.h"
  #include "decoder.h"
- #include "gtzl.h"
- //#include "frequencies_comparator.h"
+ #include "bit_coder.h"
  #include "serial_bridge.h"
  #include "leds.h"
  #include "audio_driver.h"
@@ -25,26 +24,37 @@
  
  #include "global_parameters.h"
  #include "reader.h"
- #include "reader_test.h"
  #include "fft.h"
  #include "decoder.h"
- #include "reading_queue.h"
- #include "sync_controller.h"
  
  extern "C" {
      #include "global_parameters.h"
-     
+     #include "bit_coder.h"
  }
  
- int res;
-
+ // Variabili globali
+ char sequence[G_SEQUENCE_LENGTH];
+ char last_char = 'N';
+ int algorithm = 2;
+ int g_scrolling = 0;
+ int g_scroll_offset = 0;
+ 
  /*! \fn void decoder_operations(void)
  * \brief Esegue tutte le operazioni di decodifica
  * \details Gestisce FFT, Goertzel e comparazione frequenze
  */
  
  void decoder_operations() {
-    res = detect_tones();
+     if(data_ready) {
+         struct_tone_frequencies tone_frequencies;
+         complex_g3_t* out;
+         struct_tone_bits tone_bits;
+         out = FFT_simple(array_ready, G_ARRAY_SIZE);
+         tone_frequencies = decode_ausp(out);
+         serial_write_formatted("Info: Master %d %d %d Slave: %d %d %d Config: %d %d %d \n", tone_frequencies.master[0],tone_frequencies.master[1],tone_frequencies.master[2],tone_frequencies.slave[0],tone_frequencies.slave[1],tone_frequencies.slave[2],tone_frequencies.configuration[0],tone_frequencies.configuration[1],tone_frequencies.configuration[2]);
+         tone_bits = bit_coder(tone_frequencies);
+         serial_write_formatted("Info: Master: %d Slave: %d Config: %d \n", tone_bits.master, tone_bits.slave, tone_bits.configuration);
+     }
  }
  
  /*! \fn void setup(void)
@@ -52,40 +62,23 @@
  */
  void setup() {
      Serial.begin(115200);
-
-
-     reading_queue_init();
+     memset(sequence, 0, G_SEQUENCE_LENGTH);
  
-     sync_controller_init();
      /*Inizializzazione audio driver I2S*/
      audio_init();
      /* Inizializzazione reader DMA */
-     reader_init();  
-     //reader_test_init();
-     play_two_tones(1000, 4000);
-     play_two_tones(4000, 8000);
-     play_two_tones(5500, 9000);
-     play_two_tones(7000, 3000);
-     play_two_tones(8000, 4000);
-     play_two_tones(9000, 5500);
-     play_two_tones(1000, 7000);
-     play_two_tones(2000, 5500);
-     play_two_tones(3000, 7000);
-
-
-     
-  }
+     reader_init();
  
- int temp_counter = 0; //da rimuovere
+     status_flag = 1;
+ }
+ 
  /*! \fn void loop(void)
  * \brief Loop principale
  */
  void loop() {
      if(data_ready) {
          decoder_operations();
-         temp_counter++;
          data_ready = 0;
      }
-     //play_two_tones(1000);
  
  }

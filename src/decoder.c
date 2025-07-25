@@ -21,7 +21,7 @@ double const T = 1.0 / FS;  /* Sampling interval */
 double amplitude_threshold[] = {50000, 50000, 50000};
 
 /* AUSP FREQUENCIES */
-int ausp_freq[] = {1000, 2000, 3000, 4000, 5500, 7000, 8000, 9000, 10000};
+int ausp_freq[] = {1000, 4000, 8000, 2000, 5500, 9000, 3000, 7000, 10000};
 double const freq_tolerance = (double)G_SAMPLE_RATE/(double)G_ARRAY_SIZE; /* Frequency tolerance due to FFT resolution */
 
 void serial_init(unsigned long baudrate);
@@ -29,21 +29,21 @@ void serial_write_char(char c);
 void serial_write_string(const char* str);
 void serial_write_formatted(const char* format, ...);
 
-int* check_active_frequencies(int* results_, complex_g3_t *data, int  bin_1, int bin_2, int id);
+struct_interpolated_frequency check_active_frequencies(complex_g3_t *data, int  bin_1, int bin_2, int id);
 struct_interpolated_frequency interpolate_peak_frequency(complex_g3_t *data, int peak_bin, double sample_rate, int fft_size);
 
-/*! \fn struct_tone_frequencies decode_dtmf(complex_g3_t *data)
-* \param data Pointer to an array of complex numbers representing the frequency spectrum of a DTMF signal
-* \returns A struct_tone_frequencies object containing the dominant low and high frequencies detected in the DTMF signal
-* \brief Identifies the potential low and high frequencies from a given DTMF signal using the FFT output provided in the `data` array.
-* 
-* This function processes the FFT results stored in `data` to detect the presence of specific DTMF frequencies within the permissible 
-* frequency tolerance. It calculates the magnitude of each frequency that is within a range of a valid dtmf tone in the FFT output and 
-* compares it against an amplitude threshold and frequency tolerance. The function returns the dominant frequencies that are within 
-* the specified thresholds. If multiple valid frequencies are found within the tolerance range or if no valid frequency is detected, the 
-* function may adjust or set the values to indicate an error or ambiguity in detection.
-*/
-struct_tone_frequencies decode_dtmf(complex_g3_t *data) 
+
+
+
+/*! \fn struct_tone_frequencies decode_ausp(complex_g3_t *data)
+ * \param data Array of complex numbers representing the FFT output
+ * \returns A struct_tone_frequencies containing the decoded frequencies
+ * \brief Decodes the AUSP frequencies from the FFT output
+ * 
+ * This function checks for specific frequencies in the FFT output and returns a struct_tone_frequencies
+ * containing the detected frequencies for master, slave, and configuration.
+ */
+struct_tone_frequencies decode_ausp(complex_g3_t *data) 
 {
 	struct_tone_frequencies decoded_tones;
 	serial_init(115200);
@@ -59,7 +59,18 @@ struct_tone_frequencies decode_dtmf(complex_g3_t *data)
 	for (int i = 0; i < sizeof(ausp_freq)/sizeof(int); i++) {
 		int range_start = floor(ausp_freq[i]/(freq_tolerance));
 		int range_end = range_start+1;
-		check_active_frequencies(results_, data, range_start, range_end, i);
+		struct_interpolated_frequency frequencies = check_active_frequencies(data, range_start, range_end, i);
+		if(frequencies.work){
+			serial_write_formatted("Debug: Freq: %f Amp: %f Threshold: %f\n", frequencies.frequency, frequencies.estimated_amplitude, frequencies.dynamic_amplitude_threshold);
+			if ((fabs(frequencies.frequency - ausp_freq[i]) <= freq_tolerance) && (frequencies.estimated_amplitude > frequencies.dynamic_amplitude_threshold)) {
+				results_[i / 3][i % 3] = ausp_freq[i];
+				turn_blue(1);
+				serial_write_formatted("Debug: freq %f amp: %f \n", frequencies.frequency, frequencies.estimated_amplitude);
+			} else {
+				turn_red(1);
+				results_[i / 3][i % 3] = -1;
+			}
+		}
 	}
 
 	memcpy(decoded_tones.master, results_[0], 3 * sizeof(int));
@@ -70,9 +81,19 @@ struct_tone_frequencies decode_dtmf(complex_g3_t *data)
 	return decoded_tones;
 }
 
-int* check_active_frequencies(int* results_, complex_g3_t *data, int  bin_1, int bin_2, int id){
+/*! \struct struct_interpolated_frequency
+ * \brief Structure to hold the interpolated frequency and its properties
+ * 
+ * This structure contains the frequency, estimated amplitude, dynamic amplitude threshold,
+ * and a work flag indicating if the frequency was successfully detected.
+ */
+struct_interpolated_frequency check_active_frequencies(complex_g3_t *data, int  bin_1, int bin_2, int id){
 	int i, j;
-
+	struct_interpolated_frequency detected_freq;
+	detected_freq.work = 0;
+	detected_freq.frequency = -1.0;  // Default value indicating no frequency detected
+	detected_freq.estimated_amplitude = -1.0;  // Default value indicating no amplitude detected
+	detected_freq.dynamic_amplitude_threshold = -1.0;  // Default value indicating no threshold detected														
 	for (j = bin_1; j <=bin_2; j++) 
 	{
 		double freq = (double)(FS * j) / NN;
@@ -83,7 +104,7 @@ int* check_active_frequencies(int* results_, complex_g3_t *data, int  bin_1, int
 		double dynamic_amplitude_threshold = (-301.751324*j)+48531.689491;
 		if (amp > dynamic_amplitude_threshold) 
 		{
-			serial_write_formatted("Info: Freq: %f Amplitude: %f  Threshold: %f \n", freq, amp, dynamic_amplitude_threshold);
+			serial_write_formatted("Debug: Freq: %f Amplitude: %f  Threshold: %f \n", freq, amp, dynamic_amplitude_threshold);
 
 			//serial_write_formatted("Freq: %f Amp: %f Bin: %d Around: ", freq, amp, j);
 			//Capisce se il bin che sto analizzando è il maggiore di tutto il suo intorno
@@ -100,32 +121,32 @@ int* check_active_frequencies(int* results_, complex_g3_t *data, int  bin_1, int
 				//Dato che è quello con ampiezza massima allora FACCIO L'INTERPOLAZIONE per capire se conduce
 				//alla vera frequenza che cerco
 				// Usa l'interpolazione per ottenere una stima più precisa della frequenza
-				struct_interpolated_frequency detected_freq = interpolate_peak_frequency(data, j, FS, NN);
+				detected_freq = interpolate_peak_frequency(data, j, FS, NN);
+				detected_freq.dynamic_amplitude_threshold = dynamic_amplitude_threshold;
+				detected_freq.work = 1;
 				
 				/*serial_write_formatted("Detected Freq: %.2f Hz  Amp: %.2f \n", 
 									detected_freq.frequency, detected_freq.estimated_amplitude);*/
 				
 				// Verifica se la frequenza rilevata è vicina alla frequenza target e che la amplitude stimata sia maggiore del threshold
-				serial_write_formatted("Info: Detected amp: %f diff_freq: %f tolerance: %f threshold: %f\n", detected_freq.estimated_amplitude, fabs(detected_freq.frequency - ausp_freq[id]), freq_tolerance, dynamic_amplitude_threshold);
-				if ((fabs(detected_freq.frequency - ausp_freq[id]) <= freq_tolerance) && (detected_freq.estimated_amplitude > dynamic_amplitude_threshold)) {
-					results_[(id % 3) * 3 + (id / 3)] = ausp_freq[id];  
-					turn_blue(1);
-					serial_write_formatted("Info: freq %f amp: %f \n", detected_freq.frequency, detected_freq.estimated_amplitude);
-				} else {
-					turn_red(1);
-					results_[(id % 3) * 3 + (id / 3)] = -1;
-				}
-				
+				serial_write_formatted("Debug: Detected amp: %f diff_freq: %f tolerance: %f threshold: %f\n", detected_freq.estimated_amplitude, fabs(detected_freq.frequency - ausp_freq[id]), freq_tolerance, dynamic_amplitude_threshold);
+
+				return detected_freq;
 
 			}
 
 
 		}
 	}
-	return results_;
+	return detected_freq;
 }
 
-
+/*! \struct struct_interpolated_frequency
+ * \brief Structure to hold the interpolated frequency and its properties
+ * 
+ * This structure contains the frequency, estimated amplitude, dynamic amplitude threshold,
+ * and a work flag indicating if the frequency was successfully detected.
+ */
 struct_interpolated_frequency interpolate_peak_frequency(complex_g3_t *data, int peak_bin, double sample_rate, int fft_size) {
     // Evita di fare interpolazione se il picco è al bordo dello spettro
     if (peak_bin <= 0 || peak_bin >= fft_size - 1) {
@@ -141,7 +162,7 @@ struct_interpolated_frequency interpolate_peak_frequency(complex_g3_t *data, int
     double beta = complex_magnitude(data[peak_bin]);
     double gamma = complex_magnitude(data[peak_bin+1]);
 
-	serial_write_formatted("Info: Alpha %f Beta %f Gamma %f\n", alpha, beta, gamma);
+	serial_write_formatted("Debug: Alpha %f Beta %f Gamma %f\n", alpha, beta, gamma);
     
     // Formula dell'interpolazione parabolica
     double p = 0.5 * (alpha - gamma) / (alpha - 2 * beta + gamma);
@@ -175,13 +196,11 @@ void regress_linear_update(const int bin, const double amplitude) {
     double denominator = regress_count * sum_bins2 - sum_bins * sum_bins;
     if (denominator == 0) {
         serial_write_string("Error: denominator zero, probably all bin values are equal\n");
-        return -2;
     }
     
     slope = (regress_count * sum_bins_amp - sum_bins * sum_amp) / denominator;
     intercept = (sum_amp - (slope) * sum_bins) / regress_count;
 	serial_write_formatted("Slope: %f  Intercept: %f \n", slope, intercept);
-    return 0;  // OK
 }
 
 

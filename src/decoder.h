@@ -23,9 +23,11 @@ typedef struct struct_interpolated_frequency
 {
     double frequency;
     double estimated_amplitude ;
+    int work;
+    double dynamic_amplitude_threshold;
 } struct_interpolated_frequency;
 
-/*! \fn struct_tone_frequencies decode_dtmf(complex_g3_t *data)
+/*! \fn struct_tone_frequencies decode_ausp(complex_g3_t *data)
 * \param data Pointer to an array of complex numbers representing the frequency spectrum of a DTMF signal
 * \returns A struct_tone_frequencies object containing the dominant low and high frequencies detected in the DTMF signal
 * \brief Identifies the potential low and high frequencies from a given DTMF signal using the FFT output provided in the `data` array.
@@ -37,7 +39,8 @@ typedef struct struct_interpolated_frequency
 * function may adjust or set the values to indicate an error or ambiguity in detection.
 */
 
-struct_tone_frequencies decode_dtmf(complex_g3_t *data);
+struct_tone_frequencies decode_ausp(complex_g3_t *data);
+struct_interpolated_frequency check_active_frequencies(complex_g3_t *data, int  bin_1, int bin_2, int id);
 
 #ifdef __cplusplus
 }
