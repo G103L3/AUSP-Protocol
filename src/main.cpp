@@ -16,10 +16,11 @@
  #include "reader.h"
  #include "fft.h"
  #include "decoder.h"
- #include "bit_coder.h"
  #include "serial_bridge.h"
  #include "leds.h"
  #include "audio_driver.h"
+ #include "bit_freq_codec.h"
+ #include "bit_input_packer.h"
  //#include <HardwareSerial.h>
  
  #include "global_parameters.h"
@@ -29,7 +30,6 @@
  
  extern "C" {
      #include "global_parameters.h"
-     #include "bit_coder.h"
  }
  
  // Variabili globali
@@ -53,8 +53,10 @@
          tone_frequencies = decode_ausp(out);
          serial_write_formatted("Info: Master %d %d %d Slave: %d %d %d Config: %d %d %d \n", tone_frequencies.master[0],tone_frequencies.master[1],tone_frequencies.master[2],tone_frequencies.slave[0],tone_frequencies.slave[1],tone_frequencies.slave[2],tone_frequencies.configuration[0],tone_frequencies.configuration[1],tone_frequencies.configuration[2]);
          tone_bits = bit_coder(tone_frequencies);
-         serial_write_formatted("Info: Master: %d Slave: %d Config: %d \n", tone_bits.master, tone_bits.slave, tone_bits.configuration);
-     }
+         serial_write_formatted("Info: A Master: %d Slave: %d Config: %d \n", tone_bits.master, tone_bits.slave, tone_bits.configuration);
+         process_tone_bits(tone_bits);
+         
+             }
  }
  
  /*! \fn void setup(void)

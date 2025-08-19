@@ -9,8 +9,7 @@ extern "C" {
 #include "serial_bridge.h"
 #include "global_parameters.h"
 #include "leds.h"
-#include "bit_coder.h"
-
+#include "bit_freq_codec.h"
 
 /*! \fn int interpret_bits(int freqs[3])
  * \param freqs An array of three integers representing the detected frequencies

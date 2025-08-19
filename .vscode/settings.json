@@ -20,7 +20,8 @@
         "leds.h": "c",
         "stdio.h": "c",
         "serial_bridge.h": "c",
-        "detect_tone.h": "c"
+        "detect_tone.h": "c",
+        "bit_freq_codec.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

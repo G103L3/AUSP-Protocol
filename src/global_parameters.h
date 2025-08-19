@@ -10,7 +10,7 @@
 #include <Arduino.h>
 
 
-
+#define G_MODE 1 // 0: No debug, 1: Info, 2: Debug
 /* 48000 è il nuovo sample rate, 48000 campioni al secondo */
 #define G_SAMPLE_RATE 48000
 

@@ -8,8 +8,9 @@
  */
 
  #include <Arduino.h>
+ #include "global_parameters.h"
 
- int mode = 1; //2: Stampa Debug-Info  1: Stampa solo Info 0: Non stampa nulla
+ int mode = G_MODE; //2: Stampa Debug-Info  1: Stampa solo Info 0: Non stampa nulla
  extern "C" {
      // Initialize serial communication with the specified baud rate
      void serial_init(unsigned long baudrate) {
