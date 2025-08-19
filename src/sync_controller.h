@@ -41,7 +41,9 @@
   *
   * @return true if the detection process completes successfully, false otherwise.
   */
- bool detect_tones(void);
+bool detect_tones(void);
+
+bool is_channel_free(void);
  
  #ifdef __cplusplus
 }
