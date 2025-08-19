@@ -5,6 +5,7 @@ extern "C" {
 #include <string.h>
 #include <stdlib.h>
 
+
 #include "bit_output_packer.h"
 #include "bit_freq_codec.h"
 
@@ -36,6 +37,7 @@ struct_out_tones* bit_output_packer_pack(BitOutputPacker* packer, const char* te
     for(size_t i = 0; i < len; ++i){
         unsigned char c = (unsigned char)text[i];
         for(int b = 7; b >= 0; --b){
+
             int bit = (c >> b) & 1;
             packer->pairs[packer->pair_count++] = frequency_coder(bit, role);
         }

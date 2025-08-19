@@ -22,6 +22,7 @@ extern "C" {
 typedef struct {
     struct_out_tones *pairs; /**< Dynamically allocated array of frequency pairs. */
     size_t pair_count;       /**< Number of valid pairs in @c pairs. */
+
 } BitOutputPacker;
 
 /**
