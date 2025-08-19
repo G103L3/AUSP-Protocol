@@ -20,14 +20,20 @@ extern "C" {
  * @brief Holds the frequency pairs generated from a text message.
  */
 typedef struct {
-    struct_out_tones pairs[BOP_MAX_BITS]; /**< Array of frequency pairs. */
-    size_t pair_count;                   /**< Number of valid pairs in @c pairs. */
+    struct_out_tones *pairs; /**< Dynamically allocated array of frequency pairs. */
+    size_t pair_count;       /**< Number of valid pairs in @c pairs. */
+
 } BitOutputPacker;
 
 /**
  * @brief Reset the internal state of the packer.
  */
 void bit_output_packer_init(BitOutputPacker* packer);
+
+/**
+ * @brief Release any memory held by the packer.
+ */
+void bit_output_packer_free(BitOutputPacker* packer);
 
 /**
  * @brief Convert @p text into frequency pairs for transmission.

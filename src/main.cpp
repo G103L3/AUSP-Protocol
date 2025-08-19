@@ -112,7 +112,9 @@ void loop() {
             resync_time();
             wait_for_next_slot();
             emit_tones(out_pairs, out_len);
-
+            bit_output_packer_free(&out_packer);
+            out_pairs = NULL;
+            out_len = 0;
             message_sent = true;
         }
     }
