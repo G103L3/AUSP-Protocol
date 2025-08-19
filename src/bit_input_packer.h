@@ -14,6 +14,7 @@ extern "C" {
 #define MAX_ARRAY_SIZE 1024
 #define NUM_ARRAYS 10
 #define MAX_CONSECUTIVE_ONES 24
+#define ASCII_PACKET_SIZE 2048
 
 
 
@@ -40,7 +41,9 @@ void process_tone_bits(struct_tone_bits input);
  * @param packer Pointer to the BitPacker to flush.
  * @param label Label used for printing/debug.
  */
-void flush_and_convert_to_ascii(BitPacker* packer, const char* label);
+char* flush_and_convert_to_ascii(BitPacker* packer, const char* label);
+
+char* add_bit(BitPacker* packer, uint8_t bit, const char* label);
 
 /**
  * @brief Exposed packers (global state).
@@ -48,6 +51,10 @@ void flush_and_convert_to_ascii(BitPacker* packer, const char* label);
 extern BitPacker master_packer;
 extern BitPacker slave_packer;
 extern BitPacker config_packer;
+
+extern char master_ascii_packet[ASCII_PACKET_SIZE];
+extern char slave_ascii_packet[ASCII_PACKET_SIZE];
+extern char config_ascii_packet[ASCII_PACKET_SIZE];
 
 #ifdef __cplusplus
 }
