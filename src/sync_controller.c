@@ -147,6 +147,18 @@ bool detect_tones() {
     return true;
 }
 
+bool is_channel_free() {
+    if (!detect_tones()) {
+        return false;
+    }
+    for (int i = 0; i < 10; i++) {
+        if (active_freq_flags[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
 #ifdef __cplusplus
 }
 #endif
