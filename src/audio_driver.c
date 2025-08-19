@@ -69,16 +69,26 @@ void play_two_tones(int freq1, int freq2) {
 
     int16_t buffer[buffer_size];
 
+    static float phase1 = 0.0f;
+    static float phase2 = 0.0f;
+    const float inc1 = 2.0f * PI * freq1 / G_SAMPLE_RATE;
+    const float inc2 = 2.0f * PI * freq2 / G_SAMPLE_RATE;
+
+
     for (int i = 0; i < total_samples; i++) {
-        float angle1 = 2 * PI * freq1 * i / G_SAMPLE_RATE;
-        float angle2 = 2 * PI * freq2 * i / G_SAMPLE_RATE;
-        float mixed = sinf(angle1) + sinf(angle2);
+        float mixed = sinf(phase1) + sinf(phase2);
 
         // Normalizza per evitare saturazione (somma max: 2.0)
         int16_t sample = (int16_t)(3000 * (mixed / 2.0f));
 
         buffer[2 * i] = sample;       // Left
         buffer[2 * i + 1] = sample;   // Right
+
+
+        phase1 += inc1;
+        if (phase1 >= 2.0f * PI) phase1 -= 2.0f * PI;
+        phase2 += inc2;
+        if (phase2 >= 2.0f * PI) phase2 -= 2.0f * PI;
     }
 
     size_t bytes_written = 0;
