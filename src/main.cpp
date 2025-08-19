@@ -27,6 +27,7 @@
  #include "reader.h"
  #include "fft.h"
  #include "decoder.h"
+ #include "emit_tones.h"
  
  extern "C" {
      #include "global_parameters.h"
@@ -43,6 +44,8 @@
  * \brief Esegue tutte le operazioni di decodifica
  * \details Gestisce FFT, Goertzel e comparazione frequenze
  */
+
+ int pack[32] = {0, 0, 0, 0, 0, 0, 0, 0, 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
  
  void decoder_operations() {
      if(data_ready) {
@@ -72,6 +75,8 @@
      reader_init();
  
      status_flag = 1;
+     emit_tones(pack, 0);
+
  }
  
  /*! \fn void loop(void)
@@ -82,5 +87,4 @@
          decoder_operations();
          data_ready = 0;
      }
- 
  }

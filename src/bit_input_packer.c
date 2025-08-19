@@ -14,7 +14,7 @@ extern "C" {
 #define MAX_ARRAY_SIZE 8
 #define NUM_ARRAYS 10
 #define TOTAL_BITS (MAX_ARRAY_SIZE * NUM_ARRAYS * 8)
-#define MAX_CONSECUTIVE_ONES 21
+#define MAX_CONSECUTIVE_ONES 24
 
 
 
