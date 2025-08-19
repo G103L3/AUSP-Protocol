@@ -12,7 +12,7 @@ extern "C" {
 #include "global_parameters.h"  // Presumibilmente definisce 'role' e altri parametri condivisi
 
 // Forward declaration della funzione principale
-bool emit_tones(const int *bits, size_t length, int role);
+bool emit_tones(const struct_out_tones *pairs, size_t length);
 
 #ifdef __cplusplus
 }
