@@ -16,6 +16,10 @@ extern "C" {
 #include "serial_bridge.h"
 #include "global_parameters.h"
 
+#include "esp_timer.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
 #define PAIR_COUNT 5
 #define SHIFT_AMOUNT 248
 
@@ -29,12 +33,35 @@ int last_valid_pair_index = -1;
 int active_freq_flags[10] = {0};  // 1 se la frequenza è stata trovata nella finestra
 complex_g3_t window_cut[WINDOW_SIZE];
 
+static uint64_t next_slot_us = 0;
+static const uint64_t SLOT_US = 10000ULL * 1000ULL;
+
 // Inizializza il controller di sincronizzazione
 void sync_controller_init() {
     start_point = 0;
     range = G_ARRAY_SIZE;
     temp_counter = 0;
     last_valid_pair_index = -1;
+}
+
+void sync_time_init(void) {
+    uint64_t now = esp_timer_get_time();
+    next_slot_us = ((now / SLOT_US) + 1) * SLOT_US;
+}
+
+void wait_for_next_slot(void) {
+    uint64_t now = esp_timer_get_time();
+    if (now >= next_slot_us) {
+        next_slot_us = ((now / SLOT_US) + 1) * SLOT_US;
+    }
+    uint64_t diff = next_slot_us - now;
+    vTaskDelay(diff / 1000 / portTICK_PERIOD_MS);
+    next_slot_us += SLOT_US;
+}
+
+void resync_time(void) {
+    uint64_t now = esp_timer_get_time();
+    next_slot_us = ((now / SLOT_US) + 1) * SLOT_US;
 }
 
 
@@ -144,6 +171,18 @@ bool detect_tones() {
     }
 
     sync_ausp(window_cut);
+    return true;
+}
+
+bool is_channel_free() {
+    if (!detect_tones()) {
+        return false;
+    }
+    for (int i = 0; i < 10; i++) {
+        if (active_freq_flags[i]) {
+            return false;
+        }
+    }
     return true;
 }
 

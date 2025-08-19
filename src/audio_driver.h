@@ -10,7 +10,9 @@ extern "C" {
 #include "global_parameters.h"
 
 #define I2S_NUM         I2S_NUM_1         /**< I2S peripheral number */
+#ifndef PI
 #define PI 3.14159265                     /**< Pi constant */
+#endif
 
 /** I2S pin configuration - customized for my specific wiring setup */
 #define I2S_BCK_PIN     33    /**< Bit Clock pin (BCLK) connected to GPIO33 */
