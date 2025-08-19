@@ -6,29 +6,50 @@ extern "C" {
 #endif
 
 #include <stddef.h>
-
 #include <stdint.h>
 #include <stdbool.h>
 
-#define BOP_MAX_ARRAY_SIZE 1024
-#define BOP_NUM_ARRAYS 10
-#define BOP_TOTAL_BITS (BOP_MAX_ARRAY_SIZE * BOP_NUM_ARRAYS)
+#include "global_parameters.h"
 
+/* Maximum number of ASCII characters that can be packed. */
+#define BOP_MAX_CHARS 2048
+/* Total number of bit pairs generated from the characters. */
+#define BOP_MAX_BITS (BOP_MAX_CHARS * 8)
+
+/**
+ * @brief Holds the frequency pairs generated from a text message.
+ */
 typedef struct {
-    int arrays[BOP_NUM_ARRAYS][BOP_MAX_ARRAY_SIZE];
-    size_t array_index;
-    size_t bit_position;
-    size_t total_bits;
+    struct_out_tones *pairs; /**< Dynamically allocated array of frequency pairs. */
+    size_t pair_count;       /**< Number of valid pairs in @c pairs. */
 } BitOutputPacker;
 
+/**
+ * @brief Reset the internal state of the packer.
+ */
 void bit_output_packer_init(BitOutputPacker* packer);
-bool bit_output_packer_load(BitOutputPacker* packer, const char* text);
-size_t bit_output_packer_flatten(BitOutputPacker* packer, int* out_bits, size_t max_len);
- main
+
+/**
+ * @brief Release any memory held by the packer.
+ */
+void bit_output_packer_free(BitOutputPacker* packer);
+
+/**
+ * @brief Convert @p text into frequency pairs for transmission.
+ *
+ * Each bit of the ASCII characters is converted into a pair of
+ * frequencies via @c frequency_coder.
+ *
+ * @param packer Packer instance to fill.
+ * @param text   Null-terminated string to convert.
+ * @param role   Role passed to @c frequency_coder (0 master, 1 slave, 2 config).
+ * @return Pointer to the internal array of frequency pairs or NULL on error.
+ */
+struct_out_tones* bit_output_packer_pack(BitOutputPacker* packer, const char* text, int role);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // BIT_OUTPUT_PACKER_H
+#endif /* BIT_OUTPUT_PACKER_H */
 
