@@ -16,6 +16,8 @@ BitPacker master_packer = {0};
 BitPacker slave_packer = {0};
 BitPacker config_packer = {0};
 
+static bool noise_flag = false;
+
 char master_ascii_packet[ASCII_PACKET_SIZE] = {0};
 char slave_ascii_packet[ASCII_PACKET_SIZE] = {0};
 char config_ascii_packet[ASCII_PACKET_SIZE] = {0};
@@ -109,9 +111,31 @@ char* flush_and_convert_to_ascii(BitPacker* packer, const char* label) {
 }
 
 void process_tone_bits(struct_tone_bits input) {
-    add_bit(&master_packer, input.master, "MASTER");
-    add_bit(&slave_packer, input.slave, "SLAVE");
-    add_bit(&config_packer, input.configuration, "CONFIG");
+    bool has_tone = false;
+    if (input.master == 0 || input.master == 1) has_tone = true;
+    if (input.slave == 0 || input.slave == 1) has_tone = true;
+    if (input.configuration == 0 || input.configuration == 1) has_tone = true;
+
+    if (!has_tone) {
+        noise_flag = true;
+        return;
+    }
+
+    if (!noise_flag) {
+        return;
+    }
+
+    if (input.master == 0 || input.master == 1) {
+        add_bit(&master_packer, input.master, "MASTER");
+    }
+    if (input.slave == 0 || input.slave == 1) {
+        add_bit(&slave_packer, input.slave, "SLAVE");
+    }
+    if (input.configuration == 0 || input.configuration == 1) {
+        add_bit(&config_packer, input.configuration, "CONFIG");
+    }
+
+    noise_flag = false;
 }
 
 #ifdef __cplusplus
