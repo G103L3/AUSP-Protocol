@@ -57,6 +57,4 @@ typedef struct amplitude_profile {
     double estimated_threshold_high_top;
 } amplitude_profile;
 
-
-
 #endif

@@ -74,8 +74,8 @@
      /* Inizializzazione reader DMA */
      reader_init();
  
-     status_flag = 1;
-     emit_tones(pack, 0);
+
+    status_flag = 1;
 
  }
  
@@ -87,4 +87,6 @@
          decoder_operations();
          data_ready = 0;
      }
+     emit_tones(pack, sizeof(pack)/sizeof(pack[0]), 0);
+
  }
