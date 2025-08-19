@@ -22,7 +22,6 @@
 #include "bit_freq_codec.h"
 #include "bit_input_packer.h"
 #include "bit_output_packer.h"
-#include "sync_controller.h"
 //#include <HardwareSerial.h>
  
 #include "emit_tones.h"
@@ -82,18 +81,12 @@ void setup() {
  
      /*Inizializzazione audio driver I2S*/
      audio_init();
-     /* Inizializzazione reader DMA */
+    /* Inizializzazione reader DMA */
     reader_init();
-    sync_controller_init();
 
     bit_output_packer_init(&out_packer);
     out_pairs = bit_output_packer_pack(&out_packer, "HELLO", 0);
     out_len = out_packer.pair_count;
-
-    sync_time_init();
-    wait_for_next_slot();
-
- 
 
     status_flag = 1;
 
@@ -108,15 +101,11 @@ void loop() {
         data_ready = 0;
     }
     if(!message_sent && out_len > 0) {
-        if(is_channel_free()) {
-            resync_time();
-            wait_for_next_slot();
-            emit_tones(out_pairs, out_len);
-            bit_output_packer_free(&out_packer);
-            out_pairs = NULL;
-            out_len = 0;
-            message_sent = true;
-        }
+        emit_tones(out_pairs, out_len);
+        bit_output_packer_free(&out_packer);
+        out_pairs = NULL;
+        out_len = 0;
+        message_sent = true;
     }
 
 }
