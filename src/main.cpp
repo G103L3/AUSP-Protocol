@@ -36,6 +36,15 @@ static struct_out_tones* out_pairs = NULL;
 static size_t out_len = 0;
 static bool message_sent = false;
 
+
+
+static void wait_for_next_decasecond() {
+    const uint32_t SLOT_MS = 10000;
+    uint32_t now = millis();
+    uint32_t remainder = now % SLOT_MS;
+    uint32_t wait_ms = remainder ? (SLOT_MS - remainder) : 0;
+    delay(wait_ms);
+}
  
  // Variabili globali
  char sequence[G_SEQUENCE_LENGTH];
@@ -83,6 +92,7 @@ void setup() {
 
     sync_time_init();
     wait_for_next_slot();
+
  
 
     status_flag = 1;
@@ -102,6 +112,7 @@ void loop() {
             resync_time();
             wait_for_next_slot();
             emit_tones(out_pairs, out_len);
+
             message_sent = true;
         }
     }

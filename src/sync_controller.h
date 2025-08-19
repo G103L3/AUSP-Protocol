@@ -48,6 +48,7 @@ bool is_channel_free(void);
 void sync_time_init(void);
 void wait_for_next_slot(void);
 void resync_time(void);
+
  
  #ifdef __cplusplus
 }

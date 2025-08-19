@@ -6,18 +6,25 @@ extern "C" {
 #endif
 
 #include <stddef.h>
-#include "global_parameters.h"
-#include "bit_freq_codec.h"
 
-#define BOP_MAX_PAIRS 2048
+#include <stdint.h>
+#include <stdbool.h>
+
+#define BOP_MAX_ARRAY_SIZE 1024
+#define BOP_NUM_ARRAYS 10
+#define BOP_TOTAL_BITS (BOP_MAX_ARRAY_SIZE * BOP_NUM_ARRAYS)
 
 typedef struct {
-    struct_out_tones pairs[BOP_MAX_PAIRS];
-    size_t pair_count;
+    int arrays[BOP_NUM_ARRAYS][BOP_MAX_ARRAY_SIZE];
+    size_t array_index;
+    size_t bit_position;
+    size_t total_bits;
 } BitOutputPacker;
 
 void bit_output_packer_init(BitOutputPacker* packer);
-struct_out_tones* bit_output_packer_pack(BitOutputPacker* packer, const char* text, int role);
+bool bit_output_packer_load(BitOutputPacker* packer, const char* text);
+size_t bit_output_packer_flatten(BitOutputPacker* packer, int* out_bits, size_t max_len);
+ main
 
 #ifdef __cplusplus
 }
