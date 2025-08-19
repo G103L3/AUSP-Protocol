@@ -32,9 +32,11 @@ extern "C" {
 }
 
 static BitOutputPacker out_packer;
-static int out_bits[BOP_TOTAL_BITS];
+static struct_out_tones* out_pairs = NULL;
 static size_t out_len = 0;
 static bool message_sent = false;
+
+
 
 static void wait_for_next_decasecond() {
     const uint32_t SLOT_MS = 10000;
@@ -85,10 +87,12 @@ void setup() {
     sync_controller_init();
 
     bit_output_packer_init(&out_packer);
-    bit_output_packer_load(&out_packer, "HELLO");
-    out_len = bit_output_packer_flatten(&out_packer, out_bits, BOP_TOTAL_BITS);
+    out_pairs = bit_output_packer_pack(&out_packer, "HELLO", 0);
+    out_len = out_packer.pair_count;
 
-    wait_for_next_decasecond();
+    sync_time_init();
+    wait_for_next_slot();
+
  
 
     status_flag = 1;
@@ -105,8 +109,10 @@ void loop() {
     }
     if(!message_sent && out_len > 0) {
         if(is_channel_free()) {
-            wait_for_next_decasecond();
-            emit_tones(out_bits, out_len, 0);
+            resync_time();
+            wait_for_next_slot();
+            emit_tones(out_pairs, out_len);
+
             message_sent = true;
         }
     }

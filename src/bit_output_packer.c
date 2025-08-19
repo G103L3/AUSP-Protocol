@@ -7,6 +7,7 @@ extern "C" {
 
 void bit_output_packer_init(BitOutputPacker* packer){
     if(!packer) return;
+
     memset(packer->arrays, 0, sizeof(packer->arrays));
     packer->array_index = 0;
     packer->bit_position = 0;
@@ -59,3 +60,4 @@ size_t bit_output_packer_flatten(BitOutputPacker* packer, int* out_bits, size_t 
 #ifdef __cplusplus
 }
 #endif
+

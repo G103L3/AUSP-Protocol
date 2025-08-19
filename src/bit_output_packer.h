@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <stddef.h>
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -23,9 +24,11 @@ typedef struct {
 void bit_output_packer_init(BitOutputPacker* packer);
 bool bit_output_packer_load(BitOutputPacker* packer, const char* text);
 size_t bit_output_packer_flatten(BitOutputPacker* packer, int* out_bits, size_t max_len);
+ main
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif // BIT_OUTPUT_PACKER_H
+
