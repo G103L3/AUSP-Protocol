@@ -44,16 +44,19 @@ void audio_init() {
 
 
 void play_tone(int frequency) {
-    const float duration = 0.01066667f;  //Duration taken by (512/48000) seconds
-    const int total_samples = (int)(G_SAMPLE_RATE * duration);  
+    const int total_samples = G_ARRAY_SIZE;
     const int buffer_size = total_samples * 2;  // Stereo
-
     int16_t buffer[buffer_size];
 
-    for (int i = 0; i < total_samples; i++) {
-        float angle = 2 * PI * frequency * i / G_SAMPLE_RATE;
-        int16_t sample = (int16_t)(3000 * sin(angle));
+    static float phase = 0.0f;
+    const float phase_inc = 2.0f * PI * frequency / G_SAMPLE_RATE;
 
+    for (int i = 0; i < total_samples; i++) {
+        float sample_f = sinf(phase);
+        phase += phase_inc;
+        if (phase >= 2.0f * PI) phase -= 2.0f * PI;
+
+        int16_t sample = (int16_t)(3000 * sample_f);
         buffer[2 * i] = sample;       // Left channel
         buffer[2 * i + 1] = sample;   // Right channel
     }
@@ -63,22 +66,28 @@ void play_tone(int frequency) {
 }
 
 void play_two_tones(int freq1, int freq2) {
-    const float duration = 0.01066667f;  //Duration taken by (512/48000) seconds
-    const int total_samples = (int)(G_SAMPLE_RATE * duration);  
+    const int total_samples = G_ARRAY_SIZE;
     const int buffer_size = total_samples * 2;  // Stereo
-
     int16_t buffer[buffer_size];
 
+    static float phase1 = 0.0f;
+    static float phase2 = 0.0f;
+    const float inc1 = 2.0f * PI * freq1 / G_SAMPLE_RATE;
+    const float inc2 = 2.0f * PI * freq2 / G_SAMPLE_RATE;
+
     for (int i = 0; i < total_samples; i++) {
-        float angle1 = 2 * PI * freq1 * i / G_SAMPLE_RATE;
-        float angle2 = 2 * PI * freq2 * i / G_SAMPLE_RATE;
-        float mixed = sinf(angle1) + sinf(angle2);
+        float mixed = sinf(phase1) + sinf(phase2);
 
         // Normalizza per evitare saturazione (somma max: 2.0)
         int16_t sample = (int16_t)(3000 * (mixed / 2.0f));
 
         buffer[2 * i] = sample;       // Left
         buffer[2 * i + 1] = sample;   // Right
+
+        phase1 += inc1;
+        if (phase1 >= 2.0f * PI) phase1 -= 2.0f * PI;
+        phase2 += inc2;
+        if (phase2 >= 2.0f * PI) phase2 -= 2.0f * PI;
     }
 
     size_t bytes_written = 0;
@@ -86,17 +95,22 @@ void play_two_tones(int freq1, int freq2) {
 }
 
 void play_nine_tones(const int freqs[9]) {
-    const float duration = 0.01066667f;  //Duration taken by (512/48000) seconds
-    const int total_samples = (int)(G_SAMPLE_RATE * duration);  
+    const int total_samples = G_ARRAY_SIZE;
     const int buffer_size = total_samples * 2;  // Stereo
-
     int16_t buffer[buffer_size];
+
+    static float phases[9] = {0};
+    float incs[9];
+    for (int j = 0; j < 9; ++j) {
+        incs[j] = 2.0f * PI * freqs[j] / G_SAMPLE_RATE;
+    }
 
     for (int i = 0; i < total_samples; i++) {
         float mixed = 0.0f;
         for (int j = 0; j < 9; j++) {
-            float angle = 2 * PI * freqs[j] * i / G_SAMPLE_RATE;
-            mixed += sinf(angle);
+            mixed += sinf(phases[j]);
+            phases[j] += incs[j];
+            if (phases[j] >= 2.0f * PI) phases[j] -= 2.0f * PI;
         }
 
         // Normalizza (somma max: 9.0)

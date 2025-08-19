@@ -2,6 +2,7 @@
 extern "C" {
 #endif
 #include <stdlib.h>
+#include <stddef.h>
 #include "global_parameters.h"
 #include "audio_driver.h"
 #include "bit_freq_codec.h"
@@ -9,24 +10,23 @@ extern "C" {
 #include "leds.h"
 
 
-bool emit_tones(int *bits, int role){
-    if(bits == NULL){
+bool emit_tones(const int *bits, size_t length, int role){
+    if(bits == NULL || length == 0){
         turn_red(1);
-        serial_write_string("Error: bits array is NULL\n");
+        serial_write_string("Error: bits array is NULL or length is zero\n");
         return false;
     }
-    for(int i = 0; i < sizeof(bits)/sizeof(int); i++){
+    for(size_t i = 0; i < length; i++){
         if(bits[i] < 0 || bits[i] > 1){
             serial_write_string("Error: bits array contains invalid values, only 0 and 1 are allowed\n");
             turn_red(1);
             return false;
         }
-        struct_out_tones output = frequency_coder(bits[i], role); 
+        struct_out_tones output = frequency_coder(bits[i], role);
         play_two_tones(output.tones[0], output.tones[1]);
-
     }
-    /*Inizializzazione Driver Audio*/
-    //Già inizializzato nel Main
+    /*Inizializzazione Driver Audio già eseguita nel main*/
+    return true;
 }
 
 #ifdef __cplusplus
