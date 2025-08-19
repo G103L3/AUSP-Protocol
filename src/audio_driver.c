@@ -44,28 +44,32 @@ void audio_init() {
 
 
 void play_tone(int frequency) {
-    const float duration = 0.01066667f;  //Duration taken by (512/48000) seconds
-    const int total_samples = (int)(G_SAMPLE_RATE * duration);  
-    const int buffer_size = total_samples * 2;  // Stereo
+    const float tone_duration = 0.023f;
+    const int tone_samples = (int)(G_SAMPLE_RATE * tone_duration);
+    const int tone_buffer_size = tone_samples * 2;  // Stereo
 
-    int16_t buffer[buffer_size];
+    int16_t tone_buffer[tone_buffer_size];
 
-    for (int i = 0; i < total_samples; i++) {
+    for (int i = 0; i < tone_samples; i++) {
         float angle = 2 * PI * frequency * i / G_SAMPLE_RATE;
         int16_t sample = (int16_t)(3000 * sin(angle));
 
-        buffer[2 * i] = sample;       // Left channel
-        buffer[2 * i + 1] = sample;   // Right channel
+        tone_buffer[2 * i] = sample;       // Left channel
+        tone_buffer[2 * i + 1] = sample;   // Right channel
     }
 
     size_t bytes_written = 0;
-    i2s_write(I2S_NUM, buffer, sizeof(buffer), &bytes_written, portMAX_DELAY);
+    i2s_write(I2S_NUM, tone_buffer, sizeof(tone_buffer), &bytes_written, portMAX_DELAY);
+
+    int16_t silence_buffer[tone_buffer_size];
+    memset(silence_buffer, 0, sizeof(silence_buffer));
+    i2s_write(I2S_NUM, silence_buffer, sizeof(silence_buffer), &bytes_written, portMAX_DELAY);
 }
 
 void play_two_tones(int freq1, int freq2) {
-    const float duration = 0.01066667f;  //Duration taken by (512/48000) seconds
-    const int total_samples = (int)(G_SAMPLE_RATE * duration);  
-    const int buffer_size = total_samples * 2;  // Stereo
+    const float tone_duration = 0.023f;
+    const int tone_samples = (int)(G_SAMPLE_RATE * tone_duration);
+    const int tone_buffer_size = tone_samples * 2;  // Stereo
 
     int16_t buffer[buffer_size];
 
@@ -92,17 +96,21 @@ void play_two_tones(int freq1, int freq2) {
     }
 
     size_t bytes_written = 0;
-    i2s_write(I2S_NUM, buffer, sizeof(buffer), &bytes_written, portMAX_DELAY);
+    i2s_write(I2S_NUM, tone_buffer, sizeof(tone_buffer), &bytes_written, portMAX_DELAY);
+
+    int16_t silence_buffer[tone_buffer_size];
+    memset(silence_buffer, 0, sizeof(silence_buffer));
+    i2s_write(I2S_NUM, silence_buffer, sizeof(silence_buffer), &bytes_written, portMAX_DELAY);
 }
 
 void play_nine_tones(const int freqs[9]) {
-    const float duration = 0.01066667f;  //Duration taken by (512/48000) seconds
-    const int total_samples = (int)(G_SAMPLE_RATE * duration);  
-    const int buffer_size = total_samples * 2;  // Stereo
+    const float tone_duration = 0.023f;
+    const int tone_samples = (int)(G_SAMPLE_RATE * tone_duration);
+    const int tone_buffer_size = tone_samples * 2;  // Stereo
 
-    int16_t buffer[buffer_size];
+    int16_t tone_buffer[tone_buffer_size];
 
-    for (int i = 0; i < total_samples; i++) {
+    for (int i = 0; i < tone_samples; i++) {
         float mixed = 0.0f;
         for (int j = 0; j < 9; j++) {
             float angle = 2 * PI * freqs[j] * i / G_SAMPLE_RATE;
@@ -112,12 +120,16 @@ void play_nine_tones(const int freqs[9]) {
         // Normalizza (somma max: 9.0)
         int16_t sample = (int16_t)(3000 * (mixed / 9.0f));
 
-        buffer[2 * i] = sample;       // Left
-        buffer[2 * i + 1] = sample;   // Right
+        tone_buffer[2 * i] = sample;       // Left
+        tone_buffer[2 * i + 1] = sample;   // Right
     }
 
     size_t bytes_written = 0;
-    i2s_write(I2S_NUM, buffer, sizeof(buffer), &bytes_written, portMAX_DELAY);
+    i2s_write(I2S_NUM, tone_buffer, sizeof(tone_buffer), &bytes_written, portMAX_DELAY);
+
+    int16_t silence_buffer[tone_buffer_size];
+    memset(silence_buffer, 0, sizeof(silence_buffer));
+    i2s_write(I2S_NUM, silence_buffer, sizeof(silence_buffer), &bytes_written, portMAX_DELAY);
 }
 
 
