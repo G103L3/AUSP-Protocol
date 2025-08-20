@@ -6,6 +6,23 @@ extern "C" {
 #include <math.h>
 #include <string.h>
 
+/*
+ * Large audio buffers were previously allocated on the stack inside the
+ * playback functions.  Each buffer is roughly 4.3 KB and two of them were
+ * created per call.  The default Arduino loop task on the ESP32 only has an
+ * 8 KB stack, so these allocations easily overflowed it and triggered a stack
+ * canary reset.  To avoid these costly stack allocations, the buffers are
+ * now statically allocated and shared by all playback helpers.
+ */
+
+#define TONE_DURATION 0.023f
+#define TONE_SAMPLES ((int)(G_SAMPLE_RATE * TONE_DURATION))
+#define TONE_BUFFER_SIZE (TONE_SAMPLES * 2)
+
+/* Shared buffers used by the play_* functions (zero‑initialised). */
+static int16_t tone_buffer[TONE_BUFFER_SIZE];
+static int16_t silence_buffer[TONE_BUFFER_SIZE];
+
 
 
 /**
@@ -44,13 +61,7 @@ void audio_init() {
 
 
 void play_tone(int frequency) {
-    const float tone_duration = 0.023f;
-    const int tone_samples = (int)(G_SAMPLE_RATE * tone_duration);
-    const int tone_buffer_size = tone_samples * 2;  // Stereo
-
-    int16_t tone_buffer[tone_buffer_size];
-
-    for (int i = 0; i < tone_samples; i++) {
+    for (int i = 0; i < TONE_SAMPLES; i++) {
         float angle = 2 * PI * frequency * i / G_SAMPLE_RATE;
         int16_t sample = (int16_t)(3000 * sin(angle));
 
@@ -61,25 +72,17 @@ void play_tone(int frequency) {
     size_t bytes_written = 0;
     i2s_write(I2S_NUM, tone_buffer, sizeof(tone_buffer), &bytes_written, portMAX_DELAY);
 
-    int16_t silence_buffer[tone_buffer_size];
     memset(silence_buffer, 0, sizeof(silence_buffer));
     i2s_write(I2S_NUM, silence_buffer, sizeof(silence_buffer), &bytes_written, portMAX_DELAY);
 }
 
 void play_two_tones(int freq1, int freq2) {
-    const float tone_duration = 0.023f;
-    const int tone_samples = (int)(G_SAMPLE_RATE * tone_duration);
-    const int tone_buffer_size = tone_samples * 2;  // Stereo
-
-    int16_t tone_buffer[tone_buffer_size];
-
     static float phase1 = 0.0f;
     static float phase2 = 0.0f;
     const float inc1 = 2.0f * PI * freq1 / G_SAMPLE_RATE;
     const float inc2 = 2.0f * PI * freq2 / G_SAMPLE_RATE;
 
-
-    for (int i = 0; i < tone_samples; i++) {
+    for (int i = 0; i < TONE_SAMPLES; i++) {
         float mixed = sinf(phase1) + sinf(phase2);
 
         // Normalizza per evitare saturazione (somma max: 2.0)
@@ -87,7 +90,6 @@ void play_two_tones(int freq1, int freq2) {
 
         tone_buffer[2 * i] = sample;       // Left
         tone_buffer[2 * i + 1] = sample;   // Right
-
 
         phase1 += inc1;
         if (phase1 >= 2.0f * PI) phase1 -= 2.0f * PI;
@@ -98,19 +100,12 @@ void play_two_tones(int freq1, int freq2) {
     size_t bytes_written = 0;
     i2s_write(I2S_NUM, tone_buffer, sizeof(tone_buffer), &bytes_written, portMAX_DELAY);
 
-    int16_t silence_buffer[tone_buffer_size];
     memset(silence_buffer, 0, sizeof(silence_buffer));
     i2s_write(I2S_NUM, silence_buffer, sizeof(silence_buffer), &bytes_written, portMAX_DELAY);
 }
 
 void play_nine_tones(const int freqs[9]) {
-    const float tone_duration = 0.023f;
-    const int tone_samples = (int)(G_SAMPLE_RATE * tone_duration);
-    const int tone_buffer_size = tone_samples * 2;  // Stereo
-
-    int16_t tone_buffer[tone_buffer_size];
-
-    for (int i = 0; i < tone_samples; i++) {
+    for (int i = 0; i < TONE_SAMPLES; i++) {
         float mixed = 0.0f;
         for (int j = 0; j < 9; j++) {
             float angle = 2 * PI * freqs[j] * i / G_SAMPLE_RATE;
@@ -127,7 +122,6 @@ void play_nine_tones(const int freqs[9]) {
     size_t bytes_written = 0;
     i2s_write(I2S_NUM, tone_buffer, sizeof(tone_buffer), &bytes_written, portMAX_DELAY);
 
-    int16_t silence_buffer[tone_buffer_size];
     memset(silence_buffer, 0, sizeof(silence_buffer));
     i2s_write(I2S_NUM, silence_buffer, sizeof(silence_buffer), &bytes_written, portMAX_DELAY);
 }
