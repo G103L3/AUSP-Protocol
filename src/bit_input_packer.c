@@ -81,6 +81,7 @@ char* flush_and_convert_to_ascii(BitPacker* packer, const char* label) {
     size_t array_index = 0;
     size_t byte_index = 0;
     size_t buf_idx = 0;
+    printf("Info: Converting %zu bits to ASCII\n", total_bits);
     for (size_t i = 0; i < total_bytes && buf_idx < ASCII_PACKET_SIZE - 1; i++) {
         if (byte_index + 8 > MAX_ARRAY_SIZE) {
             byte_index = 0;
@@ -93,6 +94,7 @@ char* flush_and_convert_to_ascii(BitPacker* packer, const char* label) {
         bits[8] = '\0';
 
         unsigned long value = strtoul(bits, NULL, 2);
+        printf("%c \n", value);
         buffer[buf_idx++] = (char)value;
 
         byte_index += 8;

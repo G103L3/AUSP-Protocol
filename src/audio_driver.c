@@ -71,7 +71,7 @@ void play_two_tones(int freq1, int freq2) {
     const int tone_samples = (int)(G_SAMPLE_RATE * tone_duration);
     const int tone_buffer_size = tone_samples * 2;  // Stereo
 
-    int16_t buffer[buffer_size];
+    int16_t tone_buffer[tone_buffer_size];
 
     static float phase1 = 0.0f;
     static float phase2 = 0.0f;
@@ -79,14 +79,14 @@ void play_two_tones(int freq1, int freq2) {
     const float inc2 = 2.0f * PI * freq2 / G_SAMPLE_RATE;
 
 
-    for (int i = 0; i < total_samples; i++) {
+    for (int i = 0; i < tone_samples; i++) {
         float mixed = sinf(phase1) + sinf(phase2);
 
         // Normalizza per evitare saturazione (somma max: 2.0)
         int16_t sample = (int16_t)(3000 * (mixed / 2.0f));
 
-        buffer[2 * i] = sample;       // Left
-        buffer[2 * i + 1] = sample;   // Right
+        tone_buffer[2 * i] = sample;       // Left
+        tone_buffer[2 * i + 1] = sample;   // Right
 
 
         phase1 += inc1;
