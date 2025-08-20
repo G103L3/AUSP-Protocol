@@ -85,7 +85,7 @@ void setup() {
     reader_init();
 
     bit_output_packer_init(&out_packer);
-    out_pairs = bit_output_packer_pack(&out_packer, "HELLO", 0);
+    out_pairs = bit_output_packer_pack(&out_packer, "HELLOÿÿÿ", 0);
     out_len = out_packer.pair_count;
 
     status_flag = 1;
