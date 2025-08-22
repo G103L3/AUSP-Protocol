@@ -46,9 +46,9 @@ void audio_init() {
 
 void play_two_tones(int freq1, int freq2) {
     /*Da indagare*/
-    const float tone_duration = 0.02132f;
+    const float tone_duration = 0.03f;
     const int tone_samples = (int)(G_SAMPLE_RATE * tone_duration);
-    printf("Tone samples: %d\n", tone_samples);
+    //printf("Debug: Tone samples: %d\n", tone_samples);
     const int tone_buffer_size = tone_samples * 2;  // Stereo
 
     int16_t tone_buffer[tone_buffer_size];
@@ -77,9 +77,71 @@ void play_two_tones(int freq1, int freq2) {
     size_t bytes_written = 0;
     i2s_write(I2S_NUM, tone_buffer, sizeof(tone_buffer), &bytes_written, portMAX_DELAY);
 
-    delay(21.32);
+    delay(150);
 }
 
+//Linear Regression Configuration purpose
+void play_nine_tones(const int freqs[9]) {
+    /*Da indagare*/
+    const float tone_duration = 0.03f; // ~30ms
+    const int tone_samples = (int)(G_SAMPLE_RATE * tone_duration);
+    printf("Debug: Tone samples: %d\n", tone_samples);
+
+    const int tone_buffer_size = tone_samples * 2;  // Stereo: L,R
+    int16_t tone_buffer[tone_buffer_size];
+
+    // Fasi persistenti per ogni oscillatore
+    static float phases[9] = {0};
+
+    float inc[9];
+    unsigned char active_mask[9];
+    int num_active = 0;
+
+    // Prepara gli incrementi e conta i toni attivi
+    for (int k = 0; k < 9; ++k) {
+        if (freqs[k] > 0) {
+            inc[k] = 2.0f * (float)PI * (float)freqs[k] / (float)G_SAMPLE_RATE;
+            active_mask[k] = 1;
+            ++num_active;
+        } else {
+            inc[k] = 0.0f;
+            active_mask[k] = 0;
+        }
+    }
+
+    // Se nessuna frequenza è valida, esci silenziosamente
+    if (num_active == 0) {
+        return;
+    }
+
+    // Mix e normalizzazione (headroom con fattore 3000 come nel tuo codice)
+    for (int i = 0; i < tone_samples; ++i) {
+        float mixed = 0.0f;
+
+        // Somma dei sinusoidi
+        for (int k = 0; k < 9; ++k) {
+            if (!active_mask[k]) continue;
+            mixed += sinf(phases[k]);
+
+            phases[k] += inc[k];
+            if (phases[k] >= 2.0f * (float)PI) phases[k] -= 2.0f * (float)PI;
+            // opzionale: if (phases[k] < 0.0f) phases[k] += 2.0f * (float)PI;
+        }
+
+        // Normalizza per il numero di toni attivi per evitare saturazione
+        // (somma max teorica ~ num_active)
+        float normalized = mixed / (float)num_active;
+
+        // Headroom: 3000 come nel tuo esempio (sotto a 32767)
+        int16_t sample = (int16_t)(3000.0f * normalized);
+
+        tone_buffer[2 * i]     = sample; // Left
+        tone_buffer[2 * i + 1] = sample; // Right
+    }
+
+    size_t bytes_written = 0;
+    i2s_write(I2S_NUM, tone_buffer, sizeof(tone_buffer), &bytes_written, portMAX_DELAY);
+}
 
 #ifdef __cplusplus
 }

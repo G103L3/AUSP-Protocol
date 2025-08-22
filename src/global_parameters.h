@@ -26,6 +26,7 @@
 #define G_SEQUENCE_LENGTH 100
 #define G_PI 3.14159265358979323846
 
+#define G_LINEAR_REGRESSION_MODE 0 // 0: No linear regression, 1: Linear regression Emitting 2: Linear regression Decoding 
 typedef struct struct_out_tones {
     int tones[2];
 } struct_out_tones;

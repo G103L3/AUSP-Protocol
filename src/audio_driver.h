@@ -51,6 +51,7 @@ void play_tone(int frequency);
  */
 void play_two_tones(int freq1, int freq2);
 
+void play_nine_tones(const int freqs[9]);
 /**
  * @brief Generates and plays a composite tone made of nine sine wave frequencies through the MAX98357A.
  *
