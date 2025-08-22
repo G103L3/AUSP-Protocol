@@ -2,10 +2,11 @@
  * \brief File principale per ESP32 con acquisizione DMA
  */
 
- /* C Library Headers */
- #include <stdio.h>
- #include <stdlib.h>
- #include <string.h>
+/* C Library Headers */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
  
  /* Driver Headers */
  #include <Arduino.h>
@@ -48,9 +49,16 @@ static void wait_for_next_decasecond() {
  // Variabili globali
  char sequence[G_SEQUENCE_LENGTH];
  char last_char = 'N';
- int algorithm = 2;
- int g_scrolling = 0;
- int g_scroll_offset = 0;
+int algorithm = 2;
+int g_scrolling = 0;
+int g_scroll_offset = 0;
+
+static void apply_hamming_window(complex_g3_t *data, int size) {
+    for (int n = 0; n < size; n++) {
+        double w = 0.54 - 0.46 * cos((2 * G_PI * n) / (size - 1));
+        data[n].re *= w;
+    }
+}
  
  /*! \fn void decoder_operations(void)
  * \brief Esegue tutte le operazioni di decodifica
@@ -59,10 +67,11 @@ static void wait_for_next_decasecond() {
 
  void decoder_operations() {
     if(data_ready) {
-         struct_tone_frequencies tone_frequencies;
-         complex_g3_t* out;
-         struct_tone_bits tone_bits;
-         out = FFT_simple(array_ready, G_ARRAY_SIZE);
+        struct_tone_frequencies tone_frequencies;
+        complex_g3_t* out;
+        struct_tone_bits tone_bits;
+        apply_hamming_window(array_ready, G_ARRAY_SIZE);
+        out = FFT_simple(array_ready, G_ARRAY_SIZE);
          tone_frequencies = decode_ausp(out);
          tone_bits = bit_coder(tone_frequencies);
          /*if(tone_bits.master >= 0 || tone_bits.slave >= 0 || tone_bits.configuration >= 0)

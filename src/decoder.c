@@ -17,8 +17,7 @@ int regress_count = 0;
 
 
 double const T = 1.0 / FS;  /* Sampling interval */
-/* Amplitude thresholds */
-double amplitude_threshold[] = {50000, 50000, 50000};
+#define NOISE_FLOOR_FACTOR 8.0
 
 /* AUSP FREQUENCIES */
 int ausp_freq[] = {1000, 4000, 8000, 2000, 5500, 9000, 3000, 7000, 10000};
@@ -29,11 +28,19 @@ void serial_write_char(char c);
 void serial_write_string(const char* str);
 void serial_write_formatted(const char* format, ...);
 
-struct_interpolated_frequency check_active_frequencies(complex_g3_t *data, int  bin_1, int bin_2, int id);
+struct_interpolated_frequency check_active_frequencies(complex_g3_t *data, int  bin_1, int bin_2, int id, double noise_floor);
 struct_interpolated_frequency interpolate_peak_frequency(complex_g3_t *data, int peak_bin, double sample_rate, int fft_size);
 
 
 
+
+static double estimate_noise_floor(complex_g3_t *data, int size) {
+        double sum = 0.0;
+        for (int i = 0; i < size; i++) {
+                sum += complex_magnitude(data[i]);
+        }
+        return sum / (double)size;
+}
 
 /*! \fn struct_tone_frequencies decode_ausp(complex_g3_t *data)
  * \param data Array of complex numbers representing the FFT output
@@ -43,25 +50,26 @@ struct_interpolated_frequency interpolate_peak_frequency(complex_g3_t *data, int
  * This function checks for specific frequencies in the FFT output and returns a struct_tone_frequencies
  * containing the detected frequencies for master, slave, and configuration.
  */
-struct_tone_frequencies decode_ausp(complex_g3_t *data) 
+struct_tone_frequencies decode_ausp(complex_g3_t *data)
 {
-	struct_tone_frequencies decoded_tones;
-	serial_init(115200);
-	int results_[3][3] = 
-	{
-		{0, 0, 0},
-		{0, 0, 0},
-		{0, 0, 0}
-	};
+        struct_tone_frequencies decoded_tones;
+        serial_init(115200);
+        int results_[3][3] =
+        {
+                {0, 0, 0},
+                {0, 0, 0},
+                {0, 0, 0}
+        };
 
-	turn_off();
+        turn_off();
+        double noise_floor = estimate_noise_floor(data, NN);
 
-	for (int i = 0; i < sizeof(ausp_freq)/sizeof(int); i++) {
-		int range_start = floor(ausp_freq[i]/(freq_tolerance));
-		int range_end = range_start+1;
-		struct_interpolated_frequency frequencies = check_active_frequencies(data, range_start, range_end, i);
-		if(frequencies.work){
-			serial_write_formatted("Debug: Freq: %f Amp: %f Threshold: %f\n", frequencies.frequency, frequencies.estimated_amplitude, frequencies.dynamic_amplitude_threshold);
+        for (int i = 0; i < sizeof(ausp_freq)/sizeof(int); i++) {
+                int range_start = floor(ausp_freq[i]/(freq_tolerance));
+                int range_end = range_start+1;
+                struct_interpolated_frequency frequencies = check_active_frequencies(data, range_start, range_end, i, noise_floor);
+                if(frequencies.work){
+                        serial_write_formatted("Debug: Freq: %f Amp: %f Threshold: %f\n", frequencies.frequency, frequencies.estimated_amplitude, frequencies.dynamic_amplitude_threshold);
 			if ((fabs(frequencies.frequency - ausp_freq[i]) <= freq_tolerance) && (frequencies.estimated_amplitude > frequencies.dynamic_amplitude_threshold)) {
 				results_[i / 3][i % 3] = ausp_freq[i];
 				turn_blue(1);
@@ -87,7 +95,7 @@ struct_tone_frequencies decode_ausp(complex_g3_t *data)
  * This structure contains the frequency, estimated amplitude, dynamic amplitude threshold,
  * and a work flag indicating if the frequency was successfully detected.
  */
-struct_interpolated_frequency check_active_frequencies(complex_g3_t *data, int  bin_1, int bin_2, int id){
+struct_interpolated_frequency check_active_frequencies(complex_g3_t *data, int  bin_1, int bin_2, int id, double noise_floor){
 	int i, j;
 	struct_interpolated_frequency detected_freq;
 	detected_freq.work = 0;
@@ -103,8 +111,7 @@ struct_interpolated_frequency check_active_frequencies(complex_g3_t *data, int  
 			
 			//serial_write_formatted(">Spectrum:%f:%f|xy\n", freq, amp);
 			//serial_write_formatted(">Bins Spectrum:%d:%f|xy\n", j, amp, freq_tolerance);
-			double dynamic_amplitude_threshold = (-301.751324*j)+48531.689491;
-			//double dynamic_amplitude_threshold = (-219.828502*j)+21204.707830;
+                        double dynamic_amplitude_threshold = noise_floor * NOISE_FLOOR_FACTOR;
 
 			if (amp > dynamic_amplitude_threshold) 
 			{

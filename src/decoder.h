@@ -40,7 +40,7 @@ typedef struct struct_interpolated_frequency
 */
 
 struct_tone_frequencies decode_ausp(complex_g3_t *data);
-struct_interpolated_frequency check_active_frequencies(complex_g3_t *data, int  bin_1, int bin_2, int id);
+struct_interpolated_frequency check_active_frequencies(complex_g3_t *data, int  bin_1, int bin_2, int id, double noise_floor);
 
 #ifdef __cplusplus
 }

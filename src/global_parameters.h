@@ -14,8 +14,9 @@
 /* 48000 è il nuovo sample rate, 48000 campioni al secondo */
 #define G_SAMPLE_RATE 48000
 
-/* Dimensione array calcolata per 0.064 secondi: 0.064 * 48000 = 3072 */
-#define G_ARRAY_SIZE 512
+/* Dimensione array aumentata per migliorare la risoluzione in frequenza:
+ * 1024 campioni ≃ 0.021 secondi a 48 kHz */
+#define G_ARRAY_SIZE 1024
 
 /* Dimensione della finestra scorrevole (coda FIFO) di cui poi verranno analizzati solo 1024 elementi a volta*/
 #define G_WINDOW_SIZE 256
