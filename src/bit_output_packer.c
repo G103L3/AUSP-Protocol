@@ -29,19 +29,34 @@ struct_out_tones* bit_output_packer_pack(BitOutputPacker* packer, const char* te
 
     size_t len = strlen(text);
     if(len > BOP_MAX_CHARS) len = BOP_MAX_CHARS;
-    size_t needed = len * 8;
+    size_t needed = (len * 7) + (3*7);
     packer->pairs = (struct_out_tones*)malloc(needed * sizeof(struct_out_tones));
     if(!packer->pairs) return NULL;
 
     packer->pair_count = 0;
     for(size_t i = 0; i < len; ++i){
         unsigned char c = (unsigned char)text[i];
-        for(int b = 7; b >= 0; --b){
+        printf("INFO: %c: ", c);
+        for(int b = 6; b >= 0; --b){
 
             int bit = (c >> b) & 1;
+            printf(" %d ", bit);
             packer->pairs[packer->pair_count++] = frequency_coder(bit, role);
         }
+        printf("\n");
     }
+
+    //IL CODICE SOTTO FA ANDARE IN REBOOT DA FIXARE!!!!
+    for(int i = 0; i < 3; i++){
+        printf("INFO: NUL: " );
+        for(int b = 6; b >= 0; --b){
+            printf(" 0 ");
+            packer->pairs[packer->pair_count++] = frequency_coder(0, role);
+        }
+        printf("\n");
+
+    }
+
 
     return packer->pairs;
 }

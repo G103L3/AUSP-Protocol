@@ -13,7 +13,7 @@ extern "C" {
 
 #define MAX_ARRAY_SIZE 1024
 #define NUM_ARRAYS 10
-#define MAX_CONSECUTIVE_ONES 24
+#define MAX_CONSECUTIVE_ZEROS 21
 #define ASCII_PACKET_SIZE 2048
 
 
@@ -24,7 +24,7 @@ extern "C" {
 typedef struct {
     uint8_t arrays[NUM_ARRAYS][MAX_ARRAY_SIZE];
     size_t bit_position;
-    size_t consecutive_ones;
+    size_t consecutive_zeros;
     size_t array_index;
 } BitPacker;
 
