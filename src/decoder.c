@@ -10,6 +10,11 @@ extern "C" {
 #include "string.h"
 #include "leds.h"
 #include <stdlib.h>
+#include <math.h>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 //Test
 double sum_bins = 0, sum_amp = 0, sum_bins2 = 0, sum_bins_amp = 0, slope = 0, intercept = 0;
@@ -17,11 +22,14 @@ int regress_count = 0;
 
 
 double const T = 1.0 / FS;  /* Sampling interval */
-/* Amplitude thresholds */
-double amplitude_threshold[] = {50000, 50000, 50000};
 
-/* AUSP FREQUENCIES */
-int ausp_freq[] = {1000, 4000, 8000, 2000, 5500, 9000, 3000, 7000, 10000};
+/* Frequenze utilizzate per la decodifica */
+static const int ausp_freq[] = {1000, 4000, 8000, 2000, 5500, 9000, 3000, 7000, 10000};
+static const int NUM_AUSP_FREQ = sizeof(ausp_freq) / sizeof(int);
+
+/* Stima del rumore di fondo per ogni frequenza (adattata dinamicamente) */
+static double noise_floor[9] = {0};
+
 double const freq_tolerance = (double)G_SAMPLE_RATE/(double)G_ARRAY_SIZE; /* Frequency tolerance due to FFT resolution */
 
 void serial_init(unsigned long baudrate);
@@ -31,6 +39,22 @@ void serial_write_formatted(const char* format, ...);
 
 struct_interpolated_frequency check_active_frequencies(complex_g3_t *data, int  bin_1, int bin_2, int id);
 struct_interpolated_frequency interpolate_peak_frequency(complex_g3_t *data, int peak_bin, double sample_rate, int fft_size);
+
+/* Goertzel semplificato per calcolare l'ampiezza di una singola frequenza */
+static double goertzel_magnitude(const complex_g3_t *data, int len, double target_freq) {
+    double s_prev = 0.0;
+    double s_prev2 = 0.0;
+    double normalized_frequency = (2.0 * M_PI * target_freq) / FS;
+    double coeff = 2.0 * cos(normalized_frequency);
+
+    for (int i = 0; i < len; i++) {
+        double s = data[i].re + coeff * s_prev - s_prev2;
+        s_prev2 = s_prev;
+        s_prev = s;
+    }
+
+    return s_prev2 * s_prev2 + s_prev * s_prev - coeff * s_prev * s_prev2;
+}
 
 
 
@@ -43,42 +67,48 @@ struct_interpolated_frequency interpolate_peak_frequency(complex_g3_t *data, int
  * This function checks for specific frequencies in the FFT output and returns a struct_tone_frequencies
  * containing the detected frequencies for master, slave, and configuration.
  */
-struct_tone_frequencies decode_ausp(complex_g3_t *data) 
+struct_tone_frequencies decode_ausp(complex_g3_t *data)
 {
-	struct_tone_frequencies decoded_tones;
-	serial_init(115200);
-	int results_[3][3] = 
-	{
-		{0, 0, 0},
-		{0, 0, 0},
-		{0, 0, 0}
-	};
+        struct_tone_frequencies decoded_tones;
+        serial_init(115200);
+        int results_[3][3] =
+        {
+                {0, 0, 0},
+                {0, 0, 0},
+                {0, 0, 0}
+        };
 
-	turn_off();
+        turn_off();
 
-	for (int i = 0; i < sizeof(ausp_freq)/sizeof(int); i++) {
-		int range_start = floor(ausp_freq[i]/(freq_tolerance));
-		int range_end = range_start+1;
-		struct_interpolated_frequency frequencies = check_active_frequencies(data, range_start, range_end, i);
-		if(frequencies.work){
-			serial_write_formatted("Debug: Freq: %f Amp: %f Threshold: %f\n", frequencies.frequency, frequencies.estimated_amplitude, frequencies.dynamic_amplitude_threshold);
-			if ((fabs(frequencies.frequency - ausp_freq[i]) <= freq_tolerance) && (frequencies.estimated_amplitude > frequencies.dynamic_amplitude_threshold)) {
-				results_[i / 3][i % 3] = ausp_freq[i];
-				turn_blue(1);
-				serial_write_formatted("Debug: freq %f amp: %f \n", frequencies.frequency, frequencies.estimated_amplitude);
-			} else {
-				turn_red(1);
-				results_[i / 3][i % 3] = -1;
-			}
-		}
-	}
+        for (int i = 0; i < NUM_AUSP_FREQ; i++) {
+                double amp = goertzel_magnitude(data, NN, ausp_freq[i]);
 
-	memcpy(decoded_tones.master, results_[0], 3 * sizeof(int));
-	memcpy(decoded_tones.slave, results_[1], 3 * sizeof(int));
-	memcpy(decoded_tones.configuration, results_[2], 3 * sizeof(int));
-	
+                /* Aggiorna la stima del rumore di fondo (EWMA) */
+                if (noise_floor[i] == 0) {
+                        noise_floor[i] = amp;
+                } else {
+                        noise_floor[i] = (noise_floor[i] * 0.9) + (amp * 0.1);
+                }
 
-	return decoded_tones;
+                double threshold = noise_floor[i] * 3.0 + 1000.0; /* margine per rumore */
+
+                serial_write_formatted("Debug: freq %d amp: %f thr: %f\n", ausp_freq[i], amp, threshold);
+
+                if (amp > threshold) {
+                        results_[i / 3][i % 3] = ausp_freq[i];
+                        turn_blue(1);
+                } else {
+                        results_[i / 3][i % 3] = -1;
+                        turn_red(1);
+                }
+        }
+
+        memcpy(decoded_tones.master, results_[0], 3 * sizeof(int));
+        memcpy(decoded_tones.slave, results_[1], 3 * sizeof(int));
+        memcpy(decoded_tones.configuration, results_[2], 3 * sizeof(int));
+
+
+        return decoded_tones;
 }
 
 /*! \struct struct_interpolated_frequency

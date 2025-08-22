@@ -11,9 +11,20 @@
  
   #include "reader.h"
   #include <string.h>
-  #include <freertos/FreeRTOS.h>
-  #include <freertos/task.h>
-  #include <esp_adc_cal.h>
+ #include <freertos/FreeRTOS.h>
+ #include <freertos/task.h>
+ #include <esp_adc_cal.h>
+
+ /* High-pass filter parameters to remove DC offset and low frequency noise */
+ #define HPF_ALPHA 0.995
+ static double hpf_prev_input = 0.0;
+ static double hpf_prev_output = 0.0;
+ static inline double high_pass_filter(double input) {
+     double output = HPF_ALPHA * (hpf_prev_output + input - hpf_prev_input);
+     hpf_prev_input = input;
+     hpf_prev_output = output;
+     return output;
+ }
   
  
   
@@ -47,14 +58,13 @@
   
           int samples = bytes_read / 2;
           for (int i = 0; i < samples; i++) {
-              double val = ((double)dma_buffer[i] - bias) * 2.0;
-              //serial_write_formatted("ADC: %f \n", val);
- 
-  
-              current_data[counter].re = val;
+              double val = (double)dma_buffer[i] - bias;
+              double filtered = high_pass_filter(val) * 2.0;
+
+              current_data[counter].re = filtered;
               current_data[counter].im = 0.0;
               counter++;
-  
+
               if (counter >= ARRAY_ELEMENTS) {
                   data_ready = 1;
                   swap_array();
