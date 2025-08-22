@@ -8,7 +8,8 @@
  #include <string.h>
  
  /* Driver Headers */
- #include <Arduino.h>
+#include <Arduino.h>
+#include <math.h>
  
  /* Our Headers */
  #include "global_parameters.h"
@@ -62,6 +63,12 @@ static void wait_for_next_decasecond() {
          struct_tone_frequencies tone_frequencies;
          complex_g3_t* out;
          struct_tone_bits tone_bits;
+         // Applica una finestra di Hann per ridurre la leakage spettrale
+         for(int i = 0; i < G_ARRAY_SIZE; i++) {
+             double w = 0.5 - 0.5 * cos((2 * G_PI * i) / (G_ARRAY_SIZE - 1));
+             array_ready[i].re *= w;
+         }
+
          out = FFT_simple(array_ready, G_ARRAY_SIZE);
          tone_frequencies = decode_ausp(out);
          tone_bits = bit_coder(tone_frequencies);
