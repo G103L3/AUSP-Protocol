@@ -14,6 +14,17 @@ complex_g3_t out[NN];	/* Output array for FFT results */
 complex_g3_t scratch[NN];	/* Scratch space for FFT computation */
 complex_g3_t twiddles[NN];	/* Twiddle factors */
 
+/* Applica una finestra di Hann al segnale per ridurre il leakage spettrale.
+ * L'operazione viene eseguita in-place sull'array di campioni. */
+static void apply_hann_window(complex_g3_t *x, int N)
+{
+        for (int n = 0; n < N; n++) {
+                double w = 0.5 * (1.0 - cos(2.0 * G_PI * n / (double)(N - 1)));
+                x[n].re *= w;
+                x[n].im *= w;
+        }
+}
+
 /**
  * \brief Calculates the twiddle factors for the FFT
  * \param N The number of samples in the FFT, which should be a power of two
@@ -113,7 +124,10 @@ void FFT_calculate (complex_g3_t *x, long N, complex_g3_t *X, complex_g3_t *scra
 */
 complex_g3_t* FFT_simple (complex_g3_t* x, int N)
 {
-	FFT_get_twiddle_factors(N);
+        /* Applicazione finestra di Hann prima dell'FFT per ridurre la dispersione di energia. */
+        apply_hann_window(x, N);
+
+        FFT_get_twiddle_factors(N);
 
 	FFT_calculate(x, N, out, scratch, twiddles);
 
