@@ -58,18 +58,21 @@ static void wait_for_next_decasecond() {
  */
 
  void decoder_operations() {
-     if(data_ready) {
+    if(data_ready) {
          struct_tone_frequencies tone_frequencies;
          complex_g3_t* out;
          struct_tone_bits tone_bits;
          out = FFT_simple(array_ready, G_ARRAY_SIZE);
          tone_frequencies = decode_ausp(out);
-         serial_write_formatted("Info: Master %d %d %d Slave: %d %d %d Config: %d %d %d \n", tone_frequencies.master[0],tone_frequencies.master[1],tone_frequencies.master[2],tone_frequencies.slave[0],tone_frequencies.slave[1],tone_frequencies.slave[2],tone_frequencies.configuration[0],tone_frequencies.configuration[1],tone_frequencies.configuration[2]);
          tone_bits = bit_coder(tone_frequencies);
-         serial_write_formatted("Info: A Master: %d Slave: %d Config: %d \n", tone_bits.master, tone_bits.slave, tone_bits.configuration);
+         /*if(tone_bits.master >= 0 || tone_bits.slave >= 0 || tone_bits.configuration >= 0)
+         {*/
+            //serial_write_formatted("Info: Master %d %d %d Slave: %d %d %d Config: %d %d %d \n", tone_frequencies.master[0],tone_frequencies.master[1],tone_frequencies.master[2],tone_frequencies.slave[0],tone_frequencies.slave[1],tone_frequencies.slave[2],tone_frequencies.configuration[0],tone_frequencies.configuration[1],tone_frequencies.configuration[2]);
+            serial_write_formatted("Info: A Master: %d Slave: %d Config: %d \n", tone_bits.master, tone_bits.slave, tone_bits.configuration);
+         /*/}*/
          process_tone_bits(tone_bits);
          
-             }
+    }
  }
  
  /*! \fn void setup(void)
@@ -84,28 +87,34 @@ void setup() {
     /* Inizializzazione reader DMA */
     reader_init();
 
-    bit_output_packer_init(&out_packer);
-    out_pairs = bit_output_packer_pack(&out_packer, "HELLO", 0);
-    out_len = out_packer.pair_count;
-
-    status_flag = 1;
-    if(!message_sent && out_len > 0) {
-        emit_tones(out_pairs, out_len);
-        bit_output_packer_free(&out_packer);
-        out_pairs = NULL;
-        out_len = 0;
-        message_sent = true;
+    if(G_LINEAR_REGRESSION_MODE == 0){
+        bit_output_packer_init(&out_packer);
+        out_pairs = bit_output_packer_pack(&out_packer, "HELLO", 0);
+        out_len = out_packer.pair_count;
+    
+        status_flag = 1;
+        if(!message_sent && out_len > 0) {
+            emit_tones(out_pairs, out_len);
+            bit_output_packer_free(&out_packer);
+            out_pairs = NULL;
+            out_len = 0;
+            message_sent = true;
+        }
     }
+
  }
  
  /*! \fn void loop(void)
  * \brief Loop principale
  */
 void loop() {
+    if(G_LINEAR_REGRESSION_MODE == 1) {
+        int freqs[9] = {1000, 2000, 3000, 4000, 5500, 7000, 8000, 9000, 10000};
+        play_nine_tones(freqs);
+    }
     if(data_ready) {
         decoder_operations();
         data_ready = 0;
     }
-
-
+    
 }
