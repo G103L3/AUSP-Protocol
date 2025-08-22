@@ -10,7 +10,7 @@ extern "C" {
 #include "bit_input_packer.h"
 #include "global_parameters.h"
 
-#define TOTAL_BITS (MAX_ARRAY_SIZE * NUM_ARRAYS * 8)
+#define TOTAL_BITS (MAX_ARRAY_SIZE * NUM_ARRAYS * 7)
 
 BitPacker master_packer = {0};
 BitPacker slave_packer = {0};
@@ -38,16 +38,16 @@ char* add_bit(BitPacker* packer, uint8_t bit, const char* label) {
 
     serial_write_formatted("Info: Array_index: %d\n", array_index_);
 
-    if (bit == 1) {
-        packer->arrays[array_index_][bit_index] = 1;
-        packer->consecutive_ones++;
-        if (packer->consecutive_ones >= MAX_CONSECUTIVE_ONES) {
-            printf("%s: %d consecutive 1s. Auto flush.\n", label, MAX_CONSECUTIVE_ONES);
+    if (bit == 0) {
+        packer->arrays[array_index_][bit_index] = 0;
+        packer->consecutive_zeros++;
+        if (packer->consecutive_zeros >= MAX_CONSECUTIVE_ZEROS) {
+            printf("%s: %d consecutive 1s. Auto flush.\n", label, MAX_CONSECUTIVE_ZEROS);
             return flush_and_convert_to_ascii(packer, label);
         }
     } else {
         packer->arrays[array_index_][bit_index] = 0;
-        packer->consecutive_ones = 0;
+        packer->consecutive_zeros = 0;
     }
 
     packer->bit_position++;
@@ -71,7 +71,7 @@ char* flush_and_convert_to_ascii(BitPacker* packer, const char* label) {
     } else if (packer->array_index == 0 && packer->bit_position > 0){
         total_bits = packer->bit_position;
     }
-    size_t total_bytes = total_bits / 8;
+    size_t total_bytes = total_bits / 7;
 
     serial_write_formatted("Info: Flushing %s packer with %zu bits (%zu bytes)\n",
                            label, packer->bit_position, total_bytes);
@@ -83,21 +83,22 @@ char* flush_and_convert_to_ascii(BitPacker* packer, const char* label) {
     size_t buf_idx = 0;
     printf("Info: Converting %zu bits to ASCII\n", total_bits);
     for (size_t i = 0; i < total_bytes && buf_idx < ASCII_PACKET_SIZE - 1; i++) {
-        if (byte_index + 8 > MAX_ARRAY_SIZE) {
+        if (byte_index + 7 > MAX_ARRAY_SIZE) {
             byte_index = 0;
             array_index++;
         }
         char bits[9];
-        for (size_t j = 0; j < 8; j++) {
+        for (size_t j = 0; j < 7; j++) {
             bits[j] = packer->arrays[array_index][byte_index + j] ? '1' : '0';
+            printf(" %d ", bits[j]);
         }
-        bits[8] = '\0';
+        bits[7] = '\0';
 
         unsigned long value = strtoul(bits, NULL, 2);
-        printf("%c \n", value);
         buffer[buf_idx++] = (char)value;
+        printf("-> %c \n", (char)value);
 
-        byte_index += 8;
+        byte_index += 7;
         if (byte_index >= MAX_ARRAY_SIZE) {
             byte_index = 0;
             array_index++;
@@ -108,7 +109,7 @@ char* flush_and_convert_to_ascii(BitPacker* packer, const char* label) {
     packer->array_index = 0;
     packer->bit_position = 0;
     memset(packer->arrays, 0, sizeof(packer->arrays));
-    packer->consecutive_ones = 0;
+    packer->consecutive_zeros = 0;
     return buffer;
 }
 

@@ -85,11 +85,17 @@ void setup() {
     reader_init();
 
     bit_output_packer_init(&out_packer);
-    out_pairs = bit_output_packer_pack(&out_packer, "HELLOÿÿÿ", 0);
+    out_pairs = bit_output_packer_pack(&out_packer, "HELLO", 0);
     out_len = out_packer.pair_count;
 
     status_flag = 1;
-
+    if(!message_sent && out_len > 0) {
+        emit_tones(out_pairs, out_len);
+        bit_output_packer_free(&out_packer);
+        out_pairs = NULL;
+        out_len = 0;
+        message_sent = true;
+    }
  }
  
  /*! \fn void loop(void)
@@ -100,12 +106,6 @@ void loop() {
         decoder_operations();
         data_ready = 0;
     }
-    if(!message_sent && out_len > 0) {
-        emit_tones(out_pairs, out_len);
-        bit_output_packer_free(&out_packer);
-        out_pairs = NULL;
-        out_len = 0;
-        message_sent = true;
-    }
+
 
 }

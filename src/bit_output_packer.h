@@ -14,7 +14,7 @@ extern "C" {
 /* Maximum number of ASCII characters that can be packed. */
 #define BOP_MAX_CHARS 2048
 /* Total number of bit pairs generated from the characters. */
-#define BOP_MAX_BITS (BOP_MAX_CHARS * 8)
+#define BOP_MAX_BITS (BOP_MAX_CHARS * 7)
 
 /**
  * @brief Holds the frequency pairs generated from a text message.
