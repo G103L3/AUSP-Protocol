@@ -9,7 +9,7 @@
  * Date: 2025-05-15
  */
 
- #ifndef SYNC_CONTROLLER_H
+ /*#ifndef SYNC_CONTROLLER_H
  #define SYNC_CONTROLLER_H
  
  #ifdef __cplusplus
@@ -31,7 +31,7 @@
   * This function resets the start position to zero and sets the window range
   * to the default value of 1024.
   */
- void sync_controller_init(void);
+ /*void sync_controller_init(void);*/
  
  /**
   * @brief Detects DTMF tones within a window of values extracted from the reading queue.
@@ -41,7 +41,7 @@
   *
   * @return true if the detection process completes successfully, false otherwise.
   */
-bool detect_tones(void);
+/*bool detect_tones(void);
 
 bool is_channel_free(void);
 
@@ -55,4 +55,4 @@ void resync_time(void);
 #endif
  
  #endif // SYNC_CONTROLLER_H
- 
+ */

@@ -1,4 +1,4 @@
-#ifdef __cplusplus
+/*#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -111,7 +111,7 @@ void analyze_sync_with_pair_tracking() {
         // Nessuno slittamento
     }
 }
-
+*/
 /**
  * @file sync_controller.c
  * @brief Main function for sync analysis.
@@ -127,7 +127,7 @@ void analyze_sync_with_pair_tracking() {
  * @note Ensure that all dependencies are correctly configured before 
  *       using this module.
  */
-void sync_ausp(complex_g3_t *data) {
+/*void sync_ausp(complex_g3_t *data) {
 
 
     // Reset flags
@@ -188,4 +188,4 @@ bool is_channel_free() {
 
 #ifdef __cplusplus
 }
-#endif
+#endif*/
