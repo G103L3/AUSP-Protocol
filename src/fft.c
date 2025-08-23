@@ -25,15 +25,15 @@ complex_g3_t twiddles[NN];	/* Twiddle factors */
 */
 void FFT_get_twiddle_factors (int N)
 {
-	int k;
+        int k;
 
-	for (k = 0; k < N; ++k)
-	{
-		double angle = -2.0 * G_PI * k / N;
+        for (k = 0; k < N; ++k)
+        {
+                float angle = -2.0f * (float)G_PI * k / N;
 
-		twiddles[k].re = cos(angle);
-		twiddles[k].im = sin(angle);
-	}
+                twiddles[k].re = cosf(angle);
+                twiddles[k].im = sinf(angle);
+        }
 }
 
 
@@ -76,14 +76,14 @@ void FFT_calculate (complex_g3_t *x, long N, complex_g3_t *X, complex_g3_t *scra
 
 		for (k = 0; k < n; k++)
 		{
-			double tim = twiddles[k * skip].im;
-			double tre = twiddles[k * skip].re;
+                        float tim = twiddles[k * skip].im;
+                        float tre = twiddles[k * skip].re;
 
 			for (m = 0; m < skip; ++m)
 			{
-				complex_g3_t* D = E + skip;
-				double dre = D->re * tre - D->im * tim;
-				double dim = D->re * tim + D->im * tre;
+                                complex_g3_t* D = E + skip;
+                                float dre = D->re * tre - D->im * tim;
+                                float dim = D->re * tim + D->im * tre;
 
 				Xp->re = E->re + dre;
 				Xp->im = E->im + dim;
