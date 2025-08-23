@@ -22,6 +22,11 @@ int regress_count = 0;
 
 
 double const T = 1.0 / FS;  /* Sampling interval */
+<<<<<<< Updated upstream
+=======
+/* Amplitude thresholds */
+double amplitude_threshold[] = {50000, 50000, 50000};
+>>>>>>> Stashed changes
 
 /* Frequenze utilizzate per la decodifica */
 static const int ausp_freq[] = {1000, 4000, 8000, 2000, 5500, 9000, 3000, 7000, 10000};
@@ -53,11 +58,14 @@ static double goertzel_magnitude(const complex_g3_t *data, int len, double targe
         s_prev = s;
     }
 
+<<<<<<< Updated upstream
     return s_prev2 * s_prev2 + s_prev * s_prev - coeff * s_prev * s_prev2;
 }
 
 
 
+=======
+>>>>>>> Stashed changes
 
 /*! \fn struct_tone_frequencies decode_ausp(complex_g3_t *data)
  * \param data Array of complex numbers representing the FFT output
@@ -67,21 +75,42 @@ static double goertzel_magnitude(const complex_g3_t *data, int len, double targe
  * This function checks for specific frequencies in the FFT output and returns a struct_tone_frequencies
  * containing the detected frequencies for master, slave, and configuration.
  */
-struct_tone_frequencies decode_ausp(complex_g3_t *data)
+struct_tone_frequencies decode_ausp(complex_g3_t *data) 
 {
-        struct_tone_frequencies decoded_tones;
-        serial_init(115200);
-        int results_[3][3] =
-        {
-                {0, 0, 0},
-                {0, 0, 0},
-                {0, 0, 0}
-        };
+	struct_tone_frequencies decoded_tones;
+	serial_init(115200);
+	int results_[3][3] = 
+	{
+		{0, 0, 0},
+		{0, 0, 0},
+		{0, 0, 0}
+	};
 
+<<<<<<< Updated upstream
         turn_off();
 
         for (int i = 0; i < NUM_AUSP_FREQ; i++) {
                 double amp = goertzel_magnitude(data, NN, ausp_freq[i]);
+=======
+	turn_off();
+
+	for (int i = 0; i < sizeof(ausp_freq)/sizeof(int); i++) {
+		int range_start = floor(ausp_freq[i]/(freq_tolerance));
+		int range_end = range_start+1;
+		struct_interpolated_frequency frequencies = check_active_frequencies(data, range_start, range_end, i);
+		if(frequencies.work){
+			serial_write_formatted("Debug: Freq: %f Amp: %f Threshold: %f\n", frequencies.frequency, frequencies.estimated_amplitude, frequencies.dynamic_amplitude_threshold);
+			if ((fabs(frequencies.frequency - ausp_freq[i]) <= freq_tolerance) && (frequencies.estimated_amplitude > frequencies.dynamic_amplitude_threshold)) {
+				results_[i / 3][i % 3] = ausp_freq[i];
+				turn_blue(1);
+				serial_write_formatted("Debug: freq %f amp: %f \n", frequencies.frequency, frequencies.estimated_amplitude);
+			} else {
+				turn_red(1);
+				results_[i / 3][i % 3] = -1;
+			}
+		}
+	}
+>>>>>>> Stashed changes
 
                 /* Aggiorna la stima del rumore di fondo (EWMA) */
                 if (noise_floor[i] == 0) {
@@ -118,6 +147,7 @@ struct_tone_frequencies decode_ausp(complex_g3_t *data)
  * and a work flag indicating if the frequency was successfully detected.
  */
 struct_interpolated_frequency check_active_frequencies(complex_g3_t *data, int  bin_1, int bin_2, int id){
+<<<<<<< Updated upstream
 	int i, j;
 	struct_interpolated_frequency detected_freq;
 	detected_freq.work = 0;
@@ -135,48 +165,57 @@ struct_interpolated_frequency check_active_frequencies(complex_g3_t *data, int  
 			//serial_write_formatted(">Bins Spectrum:%d:%f|xy\n", j, amp, freq_tolerance);
 			double dynamic_amplitude_threshold = (-301.751324*j)+48531.689491;
 			//double dynamic_amplitude_threshold = (-219.828502*j)+21204.707830;
+=======
+        int i, j;
+        struct_interpolated_frequency detected_freq;
+        detected_freq.work = 0;
+        detected_freq.frequency = -1.0;  // Default value indicating no frequency detected
+        detected_freq.estimated_amplitude = -1.0;  // Default value indicating no amplitude detected
+        detected_freq.dynamic_amplitude_threshold = -1.0;  // Default value indicating no threshold detected
 
-			if (amp > dynamic_amplitude_threshold) 
-			{
-				serial_write_formatted("Debug: Freq: %f Amplitude: %f  Threshold: %f \n", freq, amp, dynamic_amplitude_threshold);
-	
-				//serial_write_formatted("Freq: %f Amp: %f Bin: %d Around: ", freq, amp, j);
-				//Capisce se il bin che sto analizzando è il maggiore di tutto il suo intorno
-				for(i = j-6; i < j + 6 && complex_magnitude(data[i]) <= amp; i++) {				
-					//serial_write_formatted("%f, ", complex_decibels(data[i]));
-					//Sophisticated system to check if there are a max value, it doesn't need any variable.
-					//amp is the bigger if i == j+6
-					//serial_write_formatted(">Spectrum (+-)6:%f:%f|xy\n", ((double)(FS * i) / NN), complex_magnitude(data[i]));
-				}
-	
-				//serial_write_formatted(" I: %d J+6: %d\n", i, (j+6));
-				if (i == j+6) 
-				{
-					//Dato che è quello con ampiezza massima allora FACCIO L'INTERPOLAZIONE per capire se conduce
-					//alla vera frequenza che cerco
-					// Usa l'interpolazione per ottenere una stima più precisa della frequenza
-					detected_freq = interpolate_peak_frequency(data, j, FS, NN);
-					detected_freq.dynamic_amplitude_threshold = dynamic_amplitude_threshold;
-					detected_freq.work = 1;
-					
-					/*serial_write_formatted("Detected Freq: %.2f Hz  Amp: %.2f \n", 
-										detected_freq.frequency, detected_freq.estimated_amplitude);*/
-					
-					// Verifica se la frequenza rilevata è vicina alla frequenza target e che la amplitude stimata sia maggiore del threshold
-					serial_write_formatted("Debug: Detected amp: %f diff_freq: %f tolerance: %f threshold: %f\n", detected_freq.estimated_amplitude, fabs(detected_freq.frequency - ausp_freq[id]), freq_tolerance, dynamic_amplitude_threshold);
-	
-					return detected_freq;
-	
-				}
-	
-	
-			}
-		}else if(G_LINEAR_REGRESSION_MODE == 2){
-			regress_linear_update(j, amp);
-		}
+        /* Calcola il livello di rumore medio sull'intero spettro per adattare la soglia
+         * Questo approccio rende la rilevazione più robusta ai cambiamenti di ampiezza
+         * e al rumore ambientale. */
+        double sum_noise = 0.0;
+        for (i = 0; i < NN; i++) {
+                sum_noise += complex_magnitude(data[i]);
+        }
+        double noise_floor = sum_noise / NN;
+        double dynamic_amplitude_threshold = noise_floor * 8.0; // Fattore empirico
+>>>>>>> Stashed changes
 
-	}
-	return detected_freq;
+        for (j = bin_1; j <= bin_2; j++) {
+                double freq = (double)(FS * j) / NN;
+                double amp = complex_magnitude(data[j]);
+                if (G_LINEAR_REGRESSION_MODE == 0) {
+                        if (amp > dynamic_amplitude_threshold) {
+                                serial_write_formatted("Debug: Freq: %f Amplitude: %f  Threshold: %f \n", freq, amp, dynamic_amplitude_threshold);
+
+                                //Capisce se il bin che sto analizzando è il maggiore di tutto il suo intorno
+                                for (i = j - 6; i < j + 6 && complex_magnitude(data[i]) <= amp; i++) {
+                                        // scansione dell'intorno per confermare il picco
+                                }
+
+                                if (i == j + 6) {
+                                        // Usa l'interpolazione per ottenere una stima più precisa della frequenza
+                                        detected_freq = interpolate_peak_frequency(data, j, FS, NN);
+                                        detected_freq.dynamic_amplitude_threshold = dynamic_amplitude_threshold;
+                                        detected_freq.work = 1;
+
+                                        serial_write_formatted("Debug: Detected amp: %f diff_freq: %f tolerance: %f threshold: %f\n",
+                                                                detected_freq.estimated_amplitude,
+                                                                fabs(detected_freq.frequency - ausp_freq[id]),
+                                                                freq_tolerance,
+                                                                dynamic_amplitude_threshold);
+
+                                        return detected_freq;
+                                }
+                        }
+                } else if (G_LINEAR_REGRESSION_MODE == 2) {
+                        regress_linear_update(j, amp);
+                }
+        }
+        return detected_freq;
 }
 
 /*! \struct struct_interpolated_frequency
