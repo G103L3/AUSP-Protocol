@@ -46,7 +46,7 @@ void audio_init() {
 
 void play_two_tones(int freq1, int freq2) {
     /*Da indagare*/
-    const float tone_duration = 0.03f;
+    const float tone_duration = 0.035f;
     const int tone_samples = (int)(G_SAMPLE_RATE * tone_duration);
     //printf("Debug: Tone samples: %d\n", tone_samples);
     const int tone_buffer_size = tone_samples * 2;  // Stereo
@@ -77,7 +77,7 @@ void play_two_tones(int freq1, int freq2) {
     size_t bytes_written = 0;
     i2s_write(I2S_NUM, tone_buffer, sizeof(tone_buffer), &bytes_written, portMAX_DELAY);
 
-    delay(150);
+    delay(100);
 }
 
 //Linear Regression Configuration purpose
