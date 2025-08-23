@@ -31,8 +31,8 @@ void FFT_get_twiddle_factors (int N)
 	{
 		double angle = -2.0 * G_PI * k / N;
 
-		twiddles[k].re = cos(angle);
-		twiddles[k].im = sin(angle);
+                twiddles[k].re = (float)cos(angle);
+                twiddles[k].im = (float)sin(angle);
 	}
 }
 
@@ -85,10 +85,10 @@ void FFT_calculate (complex_g3_t *x, long N, complex_g3_t *X, complex_g3_t *scra
 				double dre = D->re * tre - D->im * tim;
 				double dim = D->re * tim + D->im * tre;
 
-				Xp->re = E->re + dre;
-				Xp->im = E->im + dim;
-				Xp2->re = E->re - dre;
-				Xp2->im = E->im - dim;
+                                Xp->re = (float)(E->re + dre);
+                                Xp->im = (float)(E->im + dim);
+                                Xp2->re = (float)(E->re - dre);
+                                Xp2->im = (float)(E->im - dim);
 
 				++Xp;
 				++Xp2;

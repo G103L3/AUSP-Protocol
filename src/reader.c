@@ -51,8 +51,8 @@
               //serial_write_formatted("ADC: %f \n", val);
  
   
-              current_data[counter].re = val;
-              current_data[counter].im = 0.0;
+              current_data[counter].re = (float)val;
+              current_data[counter].im = 0.0f;
               counter++;
   
               if (counter >= ARRAY_ELEMENTS) {

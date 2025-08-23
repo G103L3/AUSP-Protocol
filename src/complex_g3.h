@@ -18,8 +18,8 @@
 */
 typedef struct complex_g3_t
 {
-	double re;	/*!< Real component of a complex number */
-	double im;	/*!< Imaginary component of a complex number */
+	float re;	/*!< Real component of a complex number */
+	float im;	/*!< Imaginary component of a complex number */
 } complex_g3_t;
 
 /* Function Definitions */

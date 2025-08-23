@@ -33,8 +33,8 @@
         double val = ((double)dma_buffer[i] - bias) * 2.0;
 
         complex_g3_t sample;
-        sample.re = val;
-        sample.im = 0.0;
+        sample.re = (float)val;
+        sample.im = 0.0f;
         reading_queue_enqueue(&sample);
     }
 
