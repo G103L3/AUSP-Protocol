@@ -9,18 +9,19 @@
  extern "C" {
  #endif
  
-  #include "reader.h"
-  #include <string.h>
-  #include <freertos/FreeRTOS.h>
-  #include <freertos/task.h>
-  #include <esp_adc_cal.h>
+ #include "reader.h"
+ #include <string.h>
+ #include <stdlib.h>
+ #include <freertos/FreeRTOS.h>
+ #include <freertos/task.h>
+ #include <esp_adc_cal.h>
   
  
   
-  /* Buffer declarations */
-  static complex_g3_t main_array[ARRAY_ELEMENTS];
-  static complex_g3_t secondary_array[ARRAY_ELEMENTS];
-  static complex_g3_t *current_data;
+ /* Buffer declarations */
+ static complex_g3_t *main_array = NULL;
+ static complex_g3_t *secondary_array = NULL;
+ static complex_g3_t *current_data;
   
   complex_g3_t *array_ready;
   volatile int data_ready = 0;
@@ -67,6 +68,15 @@
   /*! \brief Reader initialization: configures ADC, I2S, allocates buffers and launches task */
   void reader_init(void) {
      serial_init(115200);
+      // Allocate buffers
+      main_array = (complex_g3_t *)malloc(sizeof(complex_g3_t) * ARRAY_ELEMENTS);
+      secondary_array = (complex_g3_t *)malloc(sizeof(complex_g3_t) * ARRAY_ELEMENTS);
+      if (!main_array || !secondary_array) {
+          return;
+      }
+      current_data = main_array;
+      array_ready = NULL;
+
       // ADC calibration
       uint32_t sum = 0;
       for (int i = 0; i < 1024; i++) {

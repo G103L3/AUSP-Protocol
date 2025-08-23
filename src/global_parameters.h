@@ -15,7 +15,7 @@
 #define G_SAMPLE_RATE 48000
 
 /* Dimensione array calcolata per 0.064 secondi: 0.064 * 48000 = 3072 */
-#define G_ARRAY_SIZE 512
+#define G_ARRAY_SIZE 1024
 
 /* Dimensione della finestra scorrevole (coda FIFO) di cui poi verranno analizzati solo 1024 elementi a volta*/
 #define G_WINDOW_SIZE 256

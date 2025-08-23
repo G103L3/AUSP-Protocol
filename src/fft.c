@@ -9,10 +9,11 @@ extern "C" {
 
 /* Header */
 #include "fft.h"
+#include <stdlib.h>
 
-complex_g3_t out[NN];	/* Output array for FFT results */
-complex_g3_t scratch[NN];	/* Scratch space for FFT computation */
-complex_g3_t twiddles[NN];	/* Twiddle factors */
+static complex_g3_t *out = NULL;      /* Output array for FFT results */
+static complex_g3_t *scratch = NULL;  /* Scratch space for FFT computation */
+static complex_g3_t *twiddles = NULL; /* Twiddle factors */
 
 /**
  * \brief Calculates the twiddle factors for the FFT
@@ -113,11 +114,20 @@ void FFT_calculate (complex_g3_t *x, long N, complex_g3_t *X, complex_g3_t *scra
 */
 complex_g3_t* FFT_simple (complex_g3_t* x, int N)
 {
-	FFT_get_twiddle_factors(N);
+        if (!out) {
+                out = (complex_g3_t *)malloc(sizeof(complex_g3_t) * NN);
+                scratch = (complex_g3_t *)malloc(sizeof(complex_g3_t) * NN);
+                twiddles = (complex_g3_t *)malloc(sizeof(complex_g3_t) * NN);
+                if (!out || !scratch || !twiddles) {
+                        return NULL;
+                }
+        }
 
-	FFT_calculate(x, N, out, scratch, twiddles);
+        FFT_get_twiddle_factors(N);
 
-	return out;	/* Note: this returns a pointer to a global array */
+        FFT_calculate(x, N, out, scratch, twiddles);
+
+        return out;     /* Note: this returns a pointer to a global array */
 }
 
 #ifdef __cplusplus

@@ -31,7 +31,7 @@ int range;
 int temp_counter;
 int last_valid_pair_index = -1;
 int active_freq_flags[10] = {0};  // 1 se la frequenza è stata trovata nella finestra
-complex_g3_t window_cut[WINDOW_SIZE];
+static complex_g3_t *window_cut = NULL;
 
 static uint64_t next_slot_us = 0;
 static const uint64_t SLOT_US = 10000ULL * 1000ULL;
@@ -42,6 +42,9 @@ void sync_controller_init() {
     range = G_ARRAY_SIZE;
     temp_counter = 0;
     last_valid_pair_index = -1;
+    if (!window_cut) {
+        window_cut = (complex_g3_t *)malloc(sizeof(complex_g3_t) * WINDOW_SIZE);
+    }
 }
 
 void sync_time_init(void) {
