@@ -77,7 +77,7 @@ void play_two_tones(int freq1, int freq2) {
     size_t bytes_written = 0;
     i2s_write(I2S_NUM, tone_buffer, sizeof(tone_buffer), &bytes_written, portMAX_DELAY);
 
-    delay(100);
+    delay(200);
 }
 
 //Linear Regression Configuration purpose
