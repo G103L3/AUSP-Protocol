@@ -28,7 +28,7 @@ int regress_count = 0;
 double const T = 1.0 / FS;  /* Sampling interval */
 
 /* AUSP FREQUENCIES */
-int ausp_freq[] = {1000, 4000, 8000, 2000, 5500, 9000, 3000, 7000, 10000};
+int ausp_freq[] = {1000, 2000, 3000, 2000, 5500, 9000, 3000, 7000, 10000};
 double const freq_tolerance = (double)G_SAMPLE_RATE/(double)G_ARRAY_SIZE; /* Frequency tolerance due to FFT resolution */
 
 void serial_init(unsigned long baudrate);

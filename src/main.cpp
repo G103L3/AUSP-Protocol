@@ -72,11 +72,6 @@ static void wait_for_next_decasecond() {
          out = FFT_simple(array_ready, G_ARRAY_SIZE);
          tone_frequencies = decode_ausp(out);
          tone_bits = bit_coder(tone_frequencies);
-         /*if(tone_bits.master >= 0 || tone_bits.slave >= 0 || tone_bits.configuration >= 0)
-         {*/
-            //serial_write_formatted("Info: Master %d %d %d Slave: %d %d %d Config: %d %d %d \n", tone_frequencies.master[0],tone_frequencies.master[1],tone_frequencies.master[2],tone_frequencies.slave[0],tone_frequencies.slave[1],tone_frequencies.slave[2],tone_frequencies.configuration[0],tone_frequencies.configuration[1],tone_frequencies.configuration[2]);
-            serial_write_formatted("Info: A Master: %d Slave: %d Config: %d \n", tone_bits.master, tone_bits.slave, tone_bits.configuration);
-         /*/}*/
          process_tone_bits(tone_bits);
          
     }
@@ -94,7 +89,7 @@ void setup() {
     /* Inizializzazione reader DMA */
     reader_init();
 
-    if(G_LINEAR_REGRESSION_MODE == 0){
+    if(G_LINEAR_REGRESSION_MODE == 0 && G_TESTING_MODE != 2) {
         bit_output_packer_init(&out_packer);
         out_pairs = bit_output_packer_pack(&out_packer, "HELLO", 0);
         out_len = out_packer.pair_count;
