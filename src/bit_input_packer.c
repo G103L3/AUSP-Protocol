@@ -47,11 +47,12 @@ char* add_bit(BitPacker* packer, uint8_t bit, const char* label) {
         packer->arrays[array_index_][bit_index] = 0;
         packer->consecutive_zeros++;
         if (packer->consecutive_zeros >= MAX_CONSECUTIVE_ZEROS) {
+
             printf("%s: %d consecutive 1s. Auto flush.\n", label, MAX_CONSECUTIVE_ZEROS);
             return flush_and_convert_to_ascii(packer, label);
         }
     } else {
-        packer->arrays[array_index_][bit_index] = 0;
+        packer->arrays[array_index_][bit_index] = 1;
         packer->consecutive_zeros = 0;
     }
 
@@ -92,12 +93,16 @@ char* flush_and_convert_to_ascii(BitPacker* packer, const char* label) {
             byte_index = 0;
             array_index++;
         }
-        char bits[9];
+        char bits[7];
+        int done_count = 0;
         for (size_t j = 0; j < 7; j++) {
-            bits[j] = packer->arrays[array_index][byte_index + j] ? '1' : '0';
-            printf(" %d ", bits[j]);
+            if(packer->arrays[array_index][byte_index + j] == -1){
+            } else{
+                bits[j] = packer->arrays[array_index][byte_index + j] ? '1' : '0';
+                done_count++;
+            }
         }
-        bits[7] = '\0';
+
 
         unsigned long value = strtoul(bits, NULL, 2);
         buffer[buf_idx++] = (char)value;
