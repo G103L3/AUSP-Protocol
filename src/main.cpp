@@ -37,7 +37,6 @@ static size_t out_len = 0;
 static bool message_sent = false;
 
 
-
 static void wait_for_next_decasecond() {
     const uint32_t SLOT_MS = 10000;
     uint32_t now = millis();
