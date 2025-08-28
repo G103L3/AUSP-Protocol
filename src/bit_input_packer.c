@@ -16,11 +16,16 @@ BitPacker master_packer = {0};
 BitPacker slave_packer = {0};
 BitPacker config_packer = {0};
 
-static bool noise_flag = false;
+static bool noise_flag_master = false;
+static bool noise_flag_slave = false;
+static bool noise_flag_config = false;
 
 char master_ascii_packet[ASCII_PACKET_SIZE] = {0};
 char slave_ascii_packet[ASCII_PACKET_SIZE] = {0};
 char config_ascii_packet[ASCII_PACKET_SIZE] = {0};
+
+int test_count = 0;
+
 
 static char* buffer_for_packer(BitPacker* packer) {
     if (packer == &master_packer) return master_ascii_packet;
@@ -42,11 +47,12 @@ char* add_bit(BitPacker* packer, uint8_t bit, const char* label) {
         packer->arrays[array_index_][bit_index] = 0;
         packer->consecutive_zeros++;
         if (packer->consecutive_zeros >= MAX_CONSECUTIVE_ZEROS) {
+
             printf("%s: %d consecutive 1s. Auto flush.\n", label, MAX_CONSECUTIVE_ZEROS);
             return flush_and_convert_to_ascii(packer, label);
         }
     } else {
-        packer->arrays[array_index_][bit_index] = 0;
+        packer->arrays[array_index_][bit_index] = 1;
         packer->consecutive_zeros = 0;
     }
 
@@ -87,12 +93,16 @@ char* flush_and_convert_to_ascii(BitPacker* packer, const char* label) {
             byte_index = 0;
             array_index++;
         }
-        char bits[9];
+        char bits[7];
+        int done_count = 0;
         for (size_t j = 0; j < 7; j++) {
-            bits[j] = packer->arrays[array_index][byte_index + j] ? '1' : '0';
-            printf(" %d ", bits[j]);
+            if(packer->arrays[array_index][byte_index + j] == -1){
+            } else{
+                bits[j] = packer->arrays[array_index][byte_index + j] ? '1' : '0';
+                done_count++;
+            }
         }
-        bits[7] = '\0';
+
 
         unsigned long value = strtoul(bits, NULL, 2);
         buffer[buf_idx++] = (char)value;
@@ -114,31 +124,50 @@ char* flush_and_convert_to_ascii(BitPacker* packer, const char* label) {
 }
 
 void process_tone_bits(struct_tone_bits input) {
-    bool has_tone = false;
-    if (input.master == 0 || input.master == 1) has_tone = true;
-    if (input.slave == 0 || input.slave == 1) has_tone = true;
-    if (input.configuration == 0 || input.configuration == 1) has_tone = true;
+    bool has_tone_master = false;
+    bool has_tone_slave = false;
+    bool has_tone_config = false;
+    if (input.master == 0 || input.master == 1) has_tone_master = true;
+    if (input.slave == 0 || input.slave == 1) has_tone_slave = true;
+    if (input.configuration == 0 || input.configuration == 1) has_tone_config = true;
+    //printf("Info: Received bits - Master: %d, Slave: %d, Config: %d\n", input.master, input.slave, input.configuration);
+    //printf("has_tone_master: %d, has_tone_slave: %d, has_tone_config: %d\n", has_tone_master, has_tone_slave, has_tone_config);
 
-    if (!has_tone) {
-        noise_flag = true;
+    if (!has_tone_master) {
+        noise_flag_master = true;
+    }
+    
+    if (!has_tone_slave) {
+        noise_flag_slave = true;
+    }
+
+    if (!has_tone_config) {
+        noise_flag_config = true;
+    }
+
+    if (!noise_flag_master && !noise_flag_slave && !noise_flag_config) {
         return;
     }
 
-    if (!noise_flag) {
-        return;
-    }
-
-    if (input.master == 0 || input.master == 1) {
+    if ((input.master == 0 || input.master == 1) && noise_flag_master) {
+        printf(" %d- ", input.master);
+        test_count++;
+        if(test_count == 7){
+            printf("\n");
+            test_count = 0;
+        }
         add_bit(&master_packer, input.master, "MASTER");
+        noise_flag_master = false;
     }
-    if (input.slave == 0 || input.slave == 1) {
+    if ((input.slave == 0 || input.slave == 1) && noise_flag_slave) {
         add_bit(&slave_packer, input.slave, "SLAVE");
+        noise_flag_slave = false;
     }
-    if (input.configuration == 0 || input.configuration == 1) {
+    if ((input.configuration == 0 || input.configuration == 1) && noise_flag_config) {
         add_bit(&config_packer, input.configuration, "CONFIG");
+        noise_flag_config = false;
     }
 
-    noise_flag = false;
 }
 
 #ifdef __cplusplus
