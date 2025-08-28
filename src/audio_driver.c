@@ -48,7 +48,6 @@ void play_two_tones(int freq1, int freq2) {
     if(freq1 == 0 && freq2 == 0){
         delay(200);
     }else{
-            /*Da indagare*/
     const float tone_duration = 0.035f;
     const int tone_samples = (int)(G_SAMPLE_RATE * tone_duration);
     //printf("Debug: Tone samples: %d\n", tone_samples);
@@ -86,7 +85,6 @@ void play_two_tones(int freq1, int freq2) {
 
 //Linear Regression Configuration purpose
 void play_nine_tones(const int freqs[9]) {
-    /*Da indagare*/
     const float tone_duration = 0.03f; // ~30ms
     const int tone_samples = (int)(G_SAMPLE_RATE * tone_duration);
     printf("Debug: Tone samples: %d\n", tone_samples);
