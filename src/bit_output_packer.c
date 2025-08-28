@@ -21,6 +21,7 @@ void bit_output_packer_free(BitOutputPacker* packer){
     packer->pairs = NULL;
     packer->pair_count = 0;
 }
+static struct_out_tones silent = {0,0}; 
 
 struct_out_tones* bit_output_packer_pack(BitOutputPacker* packer, const char* text, int role){
     if(!packer || !text) return NULL;
@@ -29,7 +30,7 @@ struct_out_tones* bit_output_packer_pack(BitOutputPacker* packer, const char* te
 
     size_t len = strlen(text);
     if(len > BOP_MAX_CHARS) len = BOP_MAX_CHARS;
-    size_t needed = (len * 7) + (3*7);
+    size_t needed = (len * 7)*7 + (3*7)*7;
     packer->pairs = (struct_out_tones*)malloc(needed * sizeof(struct_out_tones));
     if(!packer->pairs) return NULL;
 
@@ -41,7 +42,15 @@ struct_out_tones* bit_output_packer_pack(BitOutputPacker* packer, const char* te
 
             int bit = (c >> b) & 1;
             printf(" %d ", bit);
+            //Ne aggiunge due di proposito cosi che poi in audio driver l'emissione si di 0.35 + 0.35
             packer->pairs[packer->pair_count++] = frequency_coder(bit, role);
+            packer->pairs[packer->pair_count++] = frequency_coder(bit, role);
+            packer->pairs[packer->pair_count++] = frequency_coder(bit, role);
+            packer->pairs[packer->pair_count++] = frequency_coder(bit, role);
+            packer->pairs[packer->pair_count++] = frequency_coder(bit, role);
+            packer->pairs[packer->pair_count++] = frequency_coder(bit, role);
+            packer->pairs[packer->pair_count++] = silent;
+
         }
         printf("\n");
     }
@@ -52,6 +61,12 @@ struct_out_tones* bit_output_packer_pack(BitOutputPacker* packer, const char* te
         for(int b = 6; b >= 0; --b){
             printf(" 0 ");
             packer->pairs[packer->pair_count++] = frequency_coder(0, role);
+            packer->pairs[packer->pair_count++] = frequency_coder(0, role);
+            packer->pairs[packer->pair_count++] = frequency_coder(0, role);
+            packer->pairs[packer->pair_count++] = frequency_coder(0, role);
+            packer->pairs[packer->pair_count++] = frequency_coder(0, role);
+            packer->pairs[packer->pair_count++] = frequency_coder(0, role);
+            packer->pairs[packer->pair_count++] = silent;
         }
         printf("\n");
 

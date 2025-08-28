@@ -139,7 +139,9 @@ void sync_ausp(complex_g3_t *data) {
 
     struct_tone_frequencies tone_frequencies = decode_ausp(out);
 
-    
+
+    double noise_floor = estimate_noise_floor(out, WINDOW_SIZE);
+
     // Analisi frequenze
     for (int i = 0; i < 10; i++) {
         turn_off();
@@ -147,12 +149,12 @@ void sync_ausp(complex_g3_t *data) {
         int range_start = bin;
         int range_end = bin + 1;
 
-        struct_interpolated_frequency f = check_active_frequencies(data, range_start, range_end, i);
+        struct_interpolated_frequency f = check_active_frequencies(out, range_start, range_end, i, noise_floor);
 
         if (f.work &&
             fabs(f.frequency - sync_freq[i]) <= freq_tolerance_ &&
             f.estimated_amplitude > f.dynamic_amplitude_threshold) {
-            
+
             active_freq_flags[i] = 1;
 
             turn_blue(1);
