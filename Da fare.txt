@@ -1,0 +1,18 @@
+Implementare delle nuove frequenze per esempio per master se da 1000 a 4000 si creano delle sotto frequenze per esempio:
+Se c'è solo uno 0 allora manda: 1000 ed 4000
+Se ci sono due 0 allora in fase di codifica il input packer manda 1100 ed 4000
+Se ci sono tre 0 allora in fase di codifica il input packer manda 1200 ed 4000
+Cosi via...
+Arrivati a sette 0 che è il massimo (in quanto ASCII a 7 bit) allora manda 1700 ed 4000
+Ma qua c'è un problema, per esempio per inviare la sequenza finale di 21 bit dovrebbe inviare 3 volte 1700 ed 4000 ma siccome 
+voglio eliminare anche lo spazio di silenzio tra un segnale ed un altro farò che 
+dopo la codifica per i sette volte 0 c'è quella per i 14 volte 0 che sarà 1800 ed 4000 e poi quella per i 21 volte 0 che sarà 1900 ed 4000
+SI torna al sistema dei 4000 perché per determinare il sistema del picco si utilizza il sistema del picco tra i 12 attorno quindi se inviassi 
+1900 ed 2000 nessuno dei due sarebbe il picco locale.
+
+Lo stesso procedimento verrà fatto per gli 1 chiaramente partendo da 7000, cambio un pò le cose la sequenze saranno:
+Master: 1000 4000   4000 7000  (base)
+Slave:  2000 5000   5000 8000  (base)
+Config: 3000 6000   6000 9000  (forse lo levo)
+
+Lo stesso procedimento verrà fatto anche per gli slave e forse config

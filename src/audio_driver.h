@@ -14,10 +14,7 @@ extern "C" {
 #define PI 3.14159265                     /**< Pi constant */
 #endif
 
-/** I2S pin configuration - customized for my specific wiring setup */
-#define I2S_BCK_PIN     33    /**< Bit Clock pin (BCLK) connected to GPIO33 */
-#define I2S_WS_PIN      32    /**< Word Select (LRC) pin connected to GPIO32 */
-#define I2S_DATA_PIN    14    /**< Serial Data (DIN) pin connected to GPIO14 */
+
 
 /**
  * @brief Initializes the I2S driver with predefined configuration for audio output.

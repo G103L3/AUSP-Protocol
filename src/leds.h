@@ -12,6 +12,7 @@ extern "C" {
 #endif
  /* C Library Headers */
  #include <Arduino.h>
+ #include "global_parameters.h"
  
  void turn_red(uint8_t val);
  void turn_green(uint8_t val);

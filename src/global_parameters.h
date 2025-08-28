@@ -29,6 +29,20 @@
 #define G_LINEAR_REGRESSION_MODE 0 // 0: No linear regression, 1: Linear regression Emitting 2: Linear regression Decoding 
 
 #define G_TESTING_MODE 2 // 0: Both modes active, 1: Only Emitting, 2: Only Decoding
+
+//MAP PINS
+#define RED_LED         13
+#define BLUE_LED        12
+#define GREEN_LED       14
+#define I2S_DATA_PIN    27    /**< Serial Data (DIN) pin connected to GPIO14 */
+#define I2S_BCK_PIN     26    /**< Bit Clock pin (BCLK) connected to GPIO33 */
+#define I2S_WS_PIN      25    /**< Word Select (LRC) pin connected to GPIO32 */
+// Pin configuration for I2S microphone (INMP441)
+#define I2S_MIC_BCK_PIN 33   // BCLK
+#define I2S_MIC_WS_PIN  32  // LRCL (word select)
+#define I2S_MIC_SD_PIN  35  // DOUT
+
+
 typedef struct struct_out_tones {
     int tones[2];
 } struct_out_tones;
