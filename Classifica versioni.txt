@@ -1,0 +1,96 @@
+INFO: H:  1  0  0  1  0  0  0 
+INFO: E:  1  0  0  0  1  0  1 
+INFO: L:  1  0  0  1  1  0  0 
+INFO: L:  1  0  0  1  1  0  0 
+INFO: O:  1  0  0  1  1  1  1 
+INFO: NUL:  0  0  0  0  0  0  0 
+INFO: NUL:  0  0  0  0  0  0  0 
+INFO: NUL:  0  0  0  0  0  0  0 
+
+APPROCCI METODICI: 
+codex/improve-reader-and-decoder-reliability: 5
+codex/improve-reader-and-decoder-reliability-yqx18n: 2
+codex/improve-reader-and-decoder-reliability-o41hkn: 6
+codex/improve-reader-and-decoder-reliability-ignn2r: 1
+
+APPROCCI IN MEMORIA 1024:
+codex/fix-dram-overflow-when-setting-g_array_size: 4
+codex/fix-dram-overflow-when-setting-g_array_size-eglhqr: 1
+codex/fix-dram-overflow-when-setting-g_array_size-3pbpqa:
+
+
+
+La prima volta che ha funzionato: Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+ 1-  0-  0-  1-  0-  0-  0- 
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+ 1-  0-  0-  0-  1-  0-  1- 
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+ 1-  0-  0-  1-  1-  0-  0- 
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+ 1-  0-  0-  1-  1-  0-  0- 
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+ 1-  0-  0-  1-  1-  1-  1- 
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+ 0-  0-  0-  0-  0-  0-  0- 
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+ 0-  0-  0-  0-  0-  0-  0- 
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+Info: Array_index: 0
+ 0-  0-  0-  0-  0-  0-  0- 
+Info: Array_index: 0
+MASTER: 21 consecutive 1s. Auto flush.
+Info: Flushing MASTER packer with 55 bits (7 bytes)
+Info: Converting 55 bits to ASCII
+ 48  48  48  48  48  48  48 -> ␀ 
+ 48  48  48  48  48  48  48 -> ␀ 
+ 48  48  48  48  48  48  48 -> ␀ 
+ 48  48  48  48  48  48  48 -> ␀ 
+ 48  48  48  48  48  48  48 -> ␀ 
+ 48  48  48  48  48  48  48 -> ␀ 
+ 48  48  48  48  48  48  48 -> ␀ 

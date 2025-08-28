@@ -27,6 +27,8 @@
 #define G_PI 3.14159265358979323846
 
 #define G_LINEAR_REGRESSION_MODE 0 // 0: No linear regression, 1: Linear regression Emitting 2: Linear regression Decoding 
+
+#define G_TESTING_MODE 2 // 0: Both modes active, 1: Only Emitting, 2: Only Decoding
 typedef struct struct_out_tones {
     int tones[2];
 } struct_out_tones;

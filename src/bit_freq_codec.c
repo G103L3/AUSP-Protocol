@@ -83,10 +83,10 @@ struct_out_tones frequency_coder(int bit, int role){
     if (role == 0) { // Master
         if (bit == 0) {
             out_tones.tones[0] = 1000;   // f1
-            out_tones.tones[1] = 4000;  // f2
+            out_tones.tones[1] = 2000;  // f2
         } else if (bit == 1) {
-            out_tones.tones[0] = 4000;   // f3
-            out_tones.tones[1] = 8000;  // f4
+            out_tones.tones[0] = 2000;   // f3
+            out_tones.tones[1] = 3000;  // f4
         }
     } else if (role == 1) { // Slave
         if (bit == 0) {
