@@ -15,6 +15,8 @@ extern "C" {
 #define BOP_MAX_CHARS 2048
 /* Total number of bit pairs generated from the characters. */
 #define BOP_MAX_BITS (BOP_MAX_CHARS * 7)
+#define ZIPPED_ARRAY_SIZE 1024
+#define ZIPPED_NUM_ARRAYS 2
 
 /**
  * @brief Holds the frequency pairs generated from a text message.
@@ -35,18 +37,12 @@ void bit_output_packer_init(BitOutputPacker* packer);
  */
 void bit_output_packer_free(BitOutputPacker* packer);
 
-/**
- * @brief Convert @p text into frequency pairs for transmission.
- *
- * Each bit of the ASCII characters is converted into a pair of
- * frequencies via @c frequency_coder.
- *
- * @param packer Packer instance to fill.
- * @param text   Null-terminated string to convert.
- * @param role   Role passed to @c frequency_coder (0 master, 1 slave, 2 config).
- * @return Pointer to the internal array of frequency pairs or NULL on error.
- */
-struct_out_tones* bit_output_packer_pack(BitOutputPacker* packer, const char* text, int role);
+extern int zipped_pack[ZIPPED_NUM_ARRAYS][ZIPPED_ARRAY_SIZE];
+extern size_t zipped_array_index;
+extern size_t zipped_position;
+
+bool bit_output_packer_compress(BitOutputPacker* packer, const char* text);
+bool bit_output_packer_convert(BitOutputPacker* packer, int role);
 
 #ifdef __cplusplus
 }
