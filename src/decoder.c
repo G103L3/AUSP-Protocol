@@ -109,18 +109,28 @@ struct_tone_frequencies decode_ausp(complex_g3_t *data)
                 if(frequencies.work){
                         serial_write_formatted("Debug: Freq: %f Amp: %f Threshold: %f\n", frequencies.frequency, frequencies.estimated_amplitude, frequencies.dynamic_amplitude_threshold);
                         if ((fabs(frequencies.frequency - ausp_freq[i]) <= freq_tolerance) && (frequencies.estimated_amplitude > frequencies.dynamic_amplitude_threshold)) {
-                                int row = ((i/3)/19);
+                                int row = (i/ROW_LEN);
                                 int column;
-                                int l = i%19;
+                                int l = i % ROW_LEN;
                                 if(l >= 0 && l <= 8){column = 0;}
-                                if(l >= 9 && l <= 17){column = 2;}
-                                if(l == 18){column = 1;}
-                                results_[row][column] = ausp_freq[i];
+                                else if(l >= 9 && l <= 17){column = 2;}
+                                else if(l == 18){column = 1;}
+                                if(row < 3 && column < 3) {
+                                        results_[row][column] = ausp_freq[i];
+                                }
                                 turn_blue(1);
                                 serial_write_formatted("Debug: freq %f amp: %f \n", frequencies.frequency, frequencies.estimated_amplitude);
                         } else {
                                 turn_red(1);
-                                results_[i / 3][i % 3] = -1;
+                                int row = i / ROW_LEN;
+                                int column;
+                                int l = i % ROW_LEN;
+                                if(l >= 0 && l <= 8){column = 0;}
+                                else if(l >= 9 && l <= 17){column = 2;}
+                                else if(l == 18){column = 1;}
+                                if(row < 3 && column < 3) {
+                                        results_[row][column] = -1;
+                                }
                         }
                 }
         }
