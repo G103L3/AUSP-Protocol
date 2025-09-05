@@ -13,7 +13,7 @@ extern "C" {
 
 /*! \fn int interpret_bits(int freqs[3])
  * \param freqs An array of three integers representing the detected frequencies
- * \returns An integer representing the interpreted bits: 0, 1, -2 (error), or -3 (noise)
+ * \returns An integer representing the interpreted signal_codes: 0, 1, -2 (error), or -3 (noise)
  * \brief Interprets the detected frequencies and returns the corresponding bit value.
  * 
  * This function checks the presence of specific frequencies in the input array and determines
@@ -33,9 +33,36 @@ int interpret_bits(int freqs[3])
     }
 
     if (count == 2) {
-        
-        if (active[0] && active[1] && !active[2]){ turn_green(1); return 0;} 
-        if (!active[0] && active[1] && active[2]){ turn_green(1); return 1;}
+    //MEMO
+    // 0 = un 0; 1 = due 0; 2 = tre 0; 3 = quattro 0; 4 = cinque 0; 5 = sei 0; 6 = sette 0; 7 = 14 0; 8 = 21 0
+    //10 = un 1; 11 = due 1; 12 = tre 1; 13 = quattro 1; 14 = cinque 1; 15 = sei 1; 16 = sette 1; 17 = 14 1; 18 = 21 1
+    //printf("freqs: %d %d %d\n", freqs[0], freqs[1], freqs[2]);
+        if (active[0] && active[1] && !active[2]){ 
+            //Frequenza appartenente agli 0, si valuta quanti 0 di seguito
+            turn_green(1); 
+            if(freqs[0] <= MASTER_BASE + (TONE_STEP*19)){
+                return (freqs[0]-MASTER_BASE)/(TONE_STEP);
+            }
+            if(freqs[0] <= SLAVE_BASE + (TONE_STEP*19)){
+                return (freqs[0]-SLAVE_BASE)/(TONE_STEP);
+            }
+            if(freqs[0] <= CONFIG_BASE + (TONE_STEP*19)){
+                return (freqs[0]-CONFIG_BASE)/(TONE_STEP);
+            }
+        } 
+        if (!active[0] && active[1] && active[2]){ 
+            //Frequenza ppartenente agli 1, si valuta quanti 1 di seguito
+            turn_green(1);  
+            if(freqs[2] <= MASTER_BASE + (TONE_STEP*19)){
+                return (freqs[2]-MASTER_BASE)/(TONE_STEP);
+            }
+            if(freqs[2] <= SLAVE_BASE + (TONE_STEP*19)){
+                return (freqs[2]-SLAVE_BASE)/(TONE_STEP);
+            }
+            if(freqs[2] <= CONFIG_BASE + (TONE_STEP*19)){
+                return (freqs[2]-CONFIG_BASE)/(TONE_STEP);
+            }
+        }
         return -2; // errore logico: f1 + f3
     } else if (count == 3) {
         return -2; // multitone
@@ -47,10 +74,10 @@ int interpret_bits(int freqs[3])
 
 /*! \fn struct_tone_bits bit_coder(struct_tone_frequencies tones)
  * \param tones A struct_tone_frequencies object containing the detected frequencies
- * \returns A struct_tone_bits object containing the interpreted bits for master, slave, and configuration
- * \brief Converts the detected frequencies into bits for master, slave, and configuration.
+ * \returns A struct_tone_bits object containing the interpreted signal_codes for master, slave, and configuration
+ * \brief Converts the detected frequencies into signal_codes for master, slave, and configuration.
  * 
- * This function interprets the frequencies detected in the DTMF signal and converts them into bits.
+ * This function interprets the frequencies detected in the DTMF signal and converts them into signal_codes.
  * It uses the interpret_bits function to determine the bit values based on the presence of specific frequencies.
  */
 struct_tone_bits bit_coder(struct_tone_frequencies tones) 
@@ -79,31 +106,18 @@ struct_out_tones frequency_coder(int bit, int role){
     struct_out_tones out_tones;
     out_tones.tones[0] = -1;
     out_tones.tones[1] = -1;
-
+    //MEMO
+    // 0 = un 0; 1 = due 0; 2 = tre 0; 3 = quattro 0; 4 = cinque 0; 5 = sei 0; 6 = sette 0; 7 = 14 0; 8 = 21 0
+    //10 = un 1; 11 = due 1; 12 = tre 1; 13 = quattro 1; 14 = cinque 1; 15 = sei 1; 16 = sette 1; 17 = 14 1; 18 = 21 1
     if (role == 0) { // Master
-        if (bit == 0) {
-            out_tones.tones[0] = 1000;   // f1
-            out_tones.tones[1] = 2000;  // f2
-        } else if (bit == 1) {
-            out_tones.tones[0] = 2000;   // f3
-            out_tones.tones[1] = 3000;  // f4
-        }
+        out_tones.tones[0] = MASTER_BASE + (bit * TONE_STEP); //Frequenza di segnale per il master
+        out_tones.tones[1] = MASTER_BASE + (TONE_STEP * 18); //3200 è la frequenza portante per il master
     } else if (role == 1) { // Slave
-        if (bit == 0) {
-            out_tones.tones[0] = 2000;   // f5
-            out_tones.tones[1] = 5500;  // f6
-        } else if (bit == 1) {
-            out_tones.tones[0] = 5500;   // f7
-            out_tones.tones[1] = 9000;  // f8
-        }
+        out_tones.tones[0] = SLAVE_BASE + (bit * TONE_STEP); //Frequenza di segnale per lo slave
+        out_tones.tones[1] = SLAVE_BASE + (TONE_STEP * 18); //6200 è la frequenza portante per lo slave
     } else if (role== 2) { // Configuration
-        if (bit == 0) {
-            out_tones.tones[0] = 3000;   // f9
-            out_tones.tones[1] = 7000;  // f10
-        } else if (bit == 1) {
-            out_tones.tones[0] = 7000;   // f11
-            out_tones.tones[1] = 10000; // f12
-        }
+        out_tones.tones[0] = CONFIG_BASE + (bit * TONE_STEP); //Frequenza di segnale per il config
+        out_tones.tones[1] = CONFIG_BASE + (TONE_STEP * 18); //9200 è la frequenza portante per il config
     }
 
     return out_tones;

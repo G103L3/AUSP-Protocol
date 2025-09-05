@@ -28,7 +28,44 @@ int regress_count = 0;
 double const T = 1.0 / FS;  /* Sampling interval */
 
 /* AUSP FREQUENCIES */
-int ausp_freq[] = {1000, 2000, 3000, 2000, 5500, 9000, 3000, 7000, 10000};
+int ausp_freq[] = {
+        // Prima riga: MASTER_BASE
+        MASTER_BASE + (0  * TONE_STEP), MASTER_BASE + (1  * TONE_STEP),
+        MASTER_BASE + (2  * TONE_STEP), MASTER_BASE + (3  * TONE_STEP),
+        MASTER_BASE + (4  * TONE_STEP), MASTER_BASE + (5  * TONE_STEP),
+        MASTER_BASE + (6  * TONE_STEP), MASTER_BASE + (7  * TONE_STEP),
+        MASTER_BASE + (8  * TONE_STEP), MASTER_BASE + (9  * TONE_STEP),
+        MASTER_BASE + (10 * TONE_STEP), MASTER_BASE + (11 * TONE_STEP),
+        MASTER_BASE + (12 * TONE_STEP), MASTER_BASE + (13 * TONE_STEP),
+        MASTER_BASE + (14 * TONE_STEP), MASTER_BASE + (15 * TONE_STEP),
+        MASTER_BASE + (16 * TONE_STEP), MASTER_BASE + (17 * TONE_STEP),
+        MASTER_BASE + (18 * TONE_STEP),
+    
+        // Seconda riga: SLAVE_BASE
+        SLAVE_BASE + (0  * TONE_STEP), SLAVE_BASE + (1  * TONE_STEP),
+        SLAVE_BASE + (2  * TONE_STEP), SLAVE_BASE + (3  * TONE_STEP),
+        SLAVE_BASE + (4  * TONE_STEP), SLAVE_BASE + (5  * TONE_STEP),
+        SLAVE_BASE + (6  * TONE_STEP), SLAVE_BASE + (7  * TONE_STEP),
+        SLAVE_BASE + (8  * TONE_STEP), SLAVE_BASE + (9  * TONE_STEP),
+        SLAVE_BASE + (10 * TONE_STEP), SLAVE_BASE + (11 * TONE_STEP),
+        SLAVE_BASE + (12 * TONE_STEP), SLAVE_BASE + (13 * TONE_STEP),
+        SLAVE_BASE + (14 * TONE_STEP), SLAVE_BASE + (15 * TONE_STEP),
+        SLAVE_BASE + (16 * TONE_STEP), SLAVE_BASE + (17 * TONE_STEP),
+        SLAVE_BASE + (18 * TONE_STEP),
+    
+        // Terza riga: CONFIG_BASE
+        CONFIG_BASE + (0  * TONE_STEP), CONFIG_BASE + (1  * TONE_STEP),
+        CONFIG_BASE + (2  * TONE_STEP), CONFIG_BASE + (3  * TONE_STEP),
+        CONFIG_BASE + (4  * TONE_STEP), CONFIG_BASE + (5  * TONE_STEP),
+        CONFIG_BASE + (6  * TONE_STEP), CONFIG_BASE + (7  * TONE_STEP),
+        CONFIG_BASE + (8  * TONE_STEP), CONFIG_BASE + (9  * TONE_STEP),
+        CONFIG_BASE + (10 * TONE_STEP), CONFIG_BASE + (11 * TONE_STEP),
+        CONFIG_BASE + (12 * TONE_STEP), CONFIG_BASE + (13 * TONE_STEP),
+        CONFIG_BASE + (14 * TONE_STEP), CONFIG_BASE + (15 * TONE_STEP),
+        CONFIG_BASE + (16 * TONE_STEP), CONFIG_BASE + (17 * TONE_STEP),
+        CONFIG_BASE + (18 * TONE_STEP)
+    };
+    
 double const freq_tolerance = (double)G_SAMPLE_RATE/(double)G_ARRAY_SIZE; /* Frequency tolerance due to FFT resolution */
 
 void serial_init(unsigned long baudrate);
@@ -72,7 +109,13 @@ struct_tone_frequencies decode_ausp(complex_g3_t *data)
                 if(frequencies.work){
                         serial_write_formatted("Debug: Freq: %f Amp: %f Threshold: %f\n", frequencies.frequency, frequencies.estimated_amplitude, frequencies.dynamic_amplitude_threshold);
                         if ((fabs(frequencies.frequency - ausp_freq[i]) <= freq_tolerance) && (frequencies.estimated_amplitude > frequencies.dynamic_amplitude_threshold)) {
-                                results_[i / 3][i % 3] = ausp_freq[i];
+                                int row = ((i/3)/19);
+                                int column;
+                                int l = i%19;
+                                if(l >= 0 && l <= 8){column = 0;}
+                                if(l >= 9 && l <= 17){column = 2;}
+                                if(l == 18){column = 1;}
+                                results_[row][column] = ausp_freq[i];
                                 turn_blue(1);
                                 serial_write_formatted("Debug: freq %f amp: %f \n", frequencies.frequency, frequencies.estimated_amplitude);
                         } else {
