@@ -24,5 +24,7 @@ static size_t out_len = 0;
 
 void main(void){
     bit_output_packer_init(&out_packer);
-        out_pairs = bit_output_packer_pack(&out_packer, "HELLO", 0);
+    if(bit_output_packer_compress(&out_packer, "HELLO")){
+        bit_output_packer_convert(&out_packer, 0);
+    }
 }

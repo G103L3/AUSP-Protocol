@@ -70,9 +70,10 @@ static void wait_for_next_decasecond() {
 
          out = FFT_simple(array_ready, G_ARRAY_SIZE);
          tone_frequencies = decode_ausp(out);
-         tone_bits = bit_coder(tone_frequencies);
-         //printf("Master: %d %d %d | Slave: %d %d %d | Config: %d %d %d\n", tone_frequencies.master[0], tone_frequencies.master[1], tone_frequencies.master[2], tone_frequencies.slave[0], tone_frequencies.slave[1], tone_frequencies.slave[2], tone_frequencies.configuration[0], tone_frequencies.configuration[1], tone_frequencies.configuration[2]);
-         process_tone_bits(tone_bits);
+          tone_bits = bit_coder(tone_frequencies);
+          //printf("Master: %d %d %d | Slave: %d %d %d | Config: %d %d %d\n", tone_frequencies.master[0], tone_frequencies.master[1], tone_frequencies.master[2], tone_frequencies.slave[0], tone_frequencies.slave[1], tone_frequencies.slave[2], tone_frequencies.configuration[0], tone_frequencies.configuration[1], tone_frequencies.configuration[2]);
+          bool packet_ready = process_tone_bits(tone_bits);
+          (void)packet_ready;
          
     }
  }
@@ -91,8 +92,12 @@ void setup() {
 
     if(G_LINEAR_REGRESSION_MODE == 0 && G_TESTING_MODE != 2) {
         bit_output_packer_init(&out_packer);
-        out_pairs = bit_output_packer_pack(&out_packer, "HELLO", 0);
-        out_len = out_packer.pair_count;
+        if(bit_output_packer_compress(&out_packer, "HELLO")){
+            if(bit_output_packer_convert(&out_packer, 0)){
+                out_pairs = out_packer.pairs;
+                out_len = out_packer.pair_count;
+            }
+        }
     
         status_flag = 1;
         if(!message_sent && out_len > 0) {

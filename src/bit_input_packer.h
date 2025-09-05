@@ -14,7 +14,9 @@ extern "C" {
 #define MAX_ARRAY_SIZE 1024
 #define NUM_ARRAYS 10
 #define MAX_CONSECUTIVE_ZEROS 21
-#define ASCII_PACKET_SIZE 2048
+#define ASCII_ARRAY_SIZE 256
+#define ASCII_NUM_ARRAYS 8
+#define ASCII_PACKET_SIZE (ASCII_ARRAY_SIZE * ASCII_NUM_ARRAYS)
 
 
 
@@ -26,6 +28,8 @@ typedef struct {
     uint8_t arrays[NUM_ARRAYS][MAX_ARRAY_SIZE];
     size_t bit_position;
     size_t array_index;
+    size_t ascii_char_index;
+    size_t ascii_array_index;
 } BitPacker;
 
 /**
@@ -33,7 +37,7 @@ typedef struct {
  * 
  * @param input Struct with bits to be processed.
  */
-void process_tone_bits(struct_tone_bits input);
+bool process_tone_bits(struct_tone_bits input);
 
 /**
  * @brief Flushes content of a packer and prints it in ASCII hex.
@@ -41,9 +45,9 @@ void process_tone_bits(struct_tone_bits input);
  * @param packer Pointer to the BitPacker to flush.
  * @param label Label used for printing/debug.
  */
-char* flush_and_convert_to_ascii(BitPacker* packer, const char* label);
+bool flush_and_convert_to_ascii(BitPacker* packer, const char* label);
 
-char* add_bit(BitPacker* packer, uint8_t signal_code, const char* label);
+bool add_bit(BitPacker* packer, uint8_t signal_code, const char* label);
 
 /**
  * @brief Exposed packers (global state).
@@ -52,9 +56,9 @@ extern BitPacker master_packer;
 extern BitPacker slave_packer;
 extern BitPacker config_packer;
 
-extern char master_ascii_packet[ASCII_PACKET_SIZE];
-extern char slave_ascii_packet[ASCII_PACKET_SIZE];
-extern char config_ascii_packet[ASCII_PACKET_SIZE];
+extern char master_ascii_arrays[ASCII_NUM_ARRAYS][ASCII_ARRAY_SIZE];
+extern char slave_ascii_arrays[ASCII_NUM_ARRAYS][ASCII_ARRAY_SIZE];
+extern char config_ascii_arrays[ASCII_NUM_ARRAYS][ASCII_ARRAY_SIZE];
 
 
 
