@@ -18,13 +18,13 @@ extern "C" {
 
 
 
+
 /**
  * @brief Packer for one logical category of bits.
  */
 typedef struct {
     uint8_t arrays[NUM_ARRAYS][MAX_ARRAY_SIZE];
     size_t bit_position;
-    size_t consecutive_zeros;
     size_t array_index;
 } BitPacker;
 
@@ -43,7 +43,7 @@ void process_tone_bits(struct_tone_bits input);
  */
 char* flush_and_convert_to_ascii(BitPacker* packer, const char* label);
 
-char* add_bit(BitPacker* packer, uint8_t bit, const char* label);
+char* add_bit(BitPacker* packer, uint8_t signal_code, const char* label);
 
 /**
  * @brief Exposed packers (global state).
@@ -55,6 +55,9 @@ extern BitPacker config_packer;
 extern char master_ascii_packet[ASCII_PACKET_SIZE];
 extern char slave_ascii_packet[ASCII_PACKET_SIZE];
 extern char config_ascii_packet[ASCII_PACKET_SIZE];
+
+
+
 
 #ifdef __cplusplus
 }

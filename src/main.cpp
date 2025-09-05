@@ -71,6 +71,7 @@ static void wait_for_next_decasecond() {
          out = FFT_simple(array_ready, G_ARRAY_SIZE);
          tone_frequencies = decode_ausp(out);
          tone_bits = bit_coder(tone_frequencies);
+         //printf("Master: %d %d %d | Slave: %d %d %d | Config: %d %d %d\n", tone_frequencies.master[0], tone_frequencies.master[1], tone_frequencies.master[2], tone_frequencies.slave[0], tone_frequencies.slave[1], tone_frequencies.slave[2], tone_frequencies.configuration[0], tone_frequencies.configuration[1], tone_frequencies.configuration[2]);
          process_tone_bits(tone_bits);
          
     }

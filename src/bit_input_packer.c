@@ -24,6 +24,8 @@ char master_ascii_packet[ASCII_PACKET_SIZE] = {0};
 char slave_ascii_packet[ASCII_PACKET_SIZE] = {0};
 char config_ascii_packet[ASCII_PACKET_SIZE] = {0};
 
+
+
 int test_count = 0;
 
 
@@ -33,38 +35,62 @@ static char* buffer_for_packer(BitPacker* packer) {
     return config_ascii_packet;
 }
 
-char* add_bit(BitPacker* packer, uint8_t bit, const char* label) {
+bool update_packet(BitPacker* packer_, char* label_){
+    packer_->bit_position++;
+    if (packer_->bit_position >= MAX_ARRAY_SIZE) {
+        packer_->bit_position = 0;
+        packer_->array_index++;
+    }
+    if (packer_->array_index >= NUM_ARRAYS) {
+        printf("Warning: %s arrays full. Auto flush.\n", label_);
+        return true;
+    }else{
+        return false;
+    }
+}
+
+char* add_bit(BitPacker* packer, uint8_t signal_code, const char* label) {
     char* out = buffer_for_packer(packer);
     out[0] = '\0';
-    if (bit > 1) return out;
-
     size_t array_index_ = packer->array_index;
     size_t bit_index = packer->bit_position;
 
     serial_write_formatted("Info: Array_index: %d\n", array_index_);
 
-    if (bit == 0) {
-        packer->arrays[array_index_][bit_index] = 0;
-        packer->consecutive_zeros++;
-        if (packer->consecutive_zeros >= MAX_CONSECUTIVE_ZEROS) {
-
-            printf("%s: %d consecutive 1s. Auto flush.\n", label, MAX_CONSECUTIVE_ZEROS);
+    if (signal_code <= 9) {
+        if(signal_code <= 6){
+            //Si è nell'arco dai 1 ai 7 zeri quindi nessun codice speciale come 21 volte 0 (flush)
+            //Trascrive tutti gli 0
+            for(int i = 0; i < signal_code+1; i++){
+                packer->arrays[array_index_][bit_index] = 0;
+                if(update_packet(packer, label)){
+                    return flush_and_convert_to_ascii(packer, label);
+                }
+                array_index_ = packer->array_index;
+                bit_index = packer->bit_position;
+            }
+        }
+        if(signal_code == 8){
+            //Code 8 = 21 volte 0 (flush)
+            printf("%s: %d consecutive 1s (code 8). Auto flush.\n", label, MAX_CONSECUTIVE_ZEROS);
             return flush_and_convert_to_ascii(packer, label);
         }
     } else {
-        packer->arrays[array_index_][bit_index] = 1;
-        packer->consecutive_zeros = 0;
+        if(signal_code <= 19){
+            //Si è nell'arco dai 1 ai 7 uno 
+            //Trascrive tutti gli 1
+            signal_code = signal_code%10;
+            for(int i = 0; i < signal_code+1; i++){
+                packer->arrays[array_index_][bit_index] = 1;
+                if(update_packet(packer, label)){
+                    return flush_and_convert_to_ascii(packer, label);
+                }                array_index_ = packer->array_index;
+                bit_index = packer->bit_position;
+            }
+        }
     }
 
-    packer->bit_position++;
-    if (packer->bit_position >= MAX_ARRAY_SIZE) {
-        packer->bit_position = 0;
-        packer->array_index++;
-    }
-    if (packer->array_index >= NUM_ARRAYS) {
-        printf("Warning: %s arrays full. Auto flush.\n", label);
-        return flush_and_convert_to_ascii(packer, label);
-    }
+
     return out;
 }
 
@@ -119,7 +145,6 @@ char* flush_and_convert_to_ascii(BitPacker* packer, const char* label) {
     packer->array_index = 0;
     packer->bit_position = 0;
     memset(packer->arrays, 0, sizeof(packer->arrays));
-    packer->consecutive_zeros = 0;
     return buffer;
 }
 
@@ -127,9 +152,9 @@ void process_tone_bits(struct_tone_bits input) {
     bool has_tone_master = false;
     bool has_tone_slave = false;
     bool has_tone_config = false;
-    if (input.master == 0 || input.master == 1) has_tone_master = true;
-    if (input.slave == 0 || input.slave == 1) has_tone_slave = true;
-    if (input.configuration == 0 || input.configuration == 1) has_tone_config = true;
+    if (input.master >= 0) has_tone_master = true;
+    if (input.slave >= 0) has_tone_slave = true;
+    if (input.configuration >= 0) has_tone_config = true;
     //printf("Info: Received bits - Master: %d, Slave: %d, Config: %d\n", input.master, input.slave, input.configuration);
     //printf("has_tone_master: %d, has_tone_slave: %d, has_tone_config: %d\n", has_tone_master, has_tone_slave, has_tone_config);
 
@@ -149,21 +174,16 @@ void process_tone_bits(struct_tone_bits input) {
         return;
     }
 
-    if ((input.master == 0 || input.master == 1) && noise_flag_master) {
+    if ((input.master >= 0) && noise_flag_master) {
         printf(" %d- ", input.master);
-        test_count++;
-        if(test_count == 7){
-            printf("\n");
-            test_count = 0;
-        }
         add_bit(&master_packer, input.master, "MASTER");
         noise_flag_master = false;
     }
-    if ((input.slave == 0 || input.slave == 1) && noise_flag_slave) {
+    if ((input.slave >= 0) && noise_flag_slave) {
         add_bit(&slave_packer, input.slave, "SLAVE");
         noise_flag_slave = false;
     }
-    if ((input.configuration == 0 || input.configuration == 1) && noise_flag_config) {
+    if ((input.configuration >= 0) && noise_flag_config) {
         add_bit(&config_packer, input.configuration, "CONFIG");
         noise_flag_config = false;
     }

@@ -30,6 +30,13 @@
 
 #define G_TESTING_MODE 2 // 0: Both modes active, 1: Only Emitting, 2: Only Decoding
 
+//AUSP frequencies Pattern
+#define MASTER_BASE 1000
+#define SLAVE_BASE 20000
+#define CONFIG_BASE 40000
+#define TONE_STEP 400
+#define ROW_LEN      19
+
 //MAP PINS
 #define RED_LED         13
 #define BLUE_LED        12
@@ -73,5 +80,7 @@ typedef struct amplitude_profile {
     double estimated_threshold_high_bottom;
     double estimated_threshold_high_top;
 } amplitude_profile;
+
+
 
 #endif
