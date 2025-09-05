@@ -13,7 +13,7 @@ int consecutive_packing_zeroes = 0;
 int consecutive_packing_ones = 0;
 int pack_flag = false;
 int last = 2;
-int rep = 7;
+int rep = 3;
 static int zipped_pack[2048];
 int bit_position = 0;
 
@@ -102,6 +102,7 @@ struct_out_tones* bit_output_packer_pack(BitOutputPacker* packer, const char* te
         printf("\n");
     }
     
+    //Conversione in frequenze del pacchetto compresso già in bit
     size_t needed = (bit_position * 7)*rep + (3*7)*rep;
     packer->pairs = (struct_out_tones*)malloc(needed * sizeof(struct_out_tones));
     if(!packer->pairs) return NULL;

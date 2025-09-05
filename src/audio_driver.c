@@ -46,9 +46,9 @@ void audio_init() {
 
 void play_two_tones(int freq1, int freq2) {
     if(freq1 == 0 && freq2 == 0){
-        delay(200);
+        delay(80);
     }else{
-    const float tone_duration = 0.035f;
+    const float tone_duration = 0.024f;
     const int tone_samples = (int)(G_SAMPLE_RATE * tone_duration);
     //printf("Debug: Tone samples: %d\n", tone_samples);
     const int tone_buffer_size = tone_samples * 2;  // Stereo

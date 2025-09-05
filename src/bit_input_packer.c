@@ -6,11 +6,47 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <time.h>            // <-- per clock_gettime
 #include "serial_bridge.h"
 #include "bit_input_packer.h"
 #include "global_parameters.h"
 
 #define TOTAL_BITS (MAX_ARRAY_SIZE * NUM_ARRAYS * 7)
+
+// ------------------------ Nuove utility: tempo & filtro ASCII ------------------------
+
+static uint64_t now_ms(void) {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (uint64_t)ts.tv_sec * 1000ULL + (uint64_t)(ts.tv_nsec / 1000000ULL);
+}
+
+static bool is_allowed_ascii_char(unsigned char c) {
+    if ((c >= '0' && c <= '9') ||
+        (c >= 'A' && c <= 'Z') ||
+        (c >= 'a' && c <= 'z'))
+        return true;
+
+    switch (c) {
+        case '{': case '}': case '[': case ']':
+        case '(': case ')': case ':': case ';':
+            return true;
+        default:
+            return false;
+    }
+}
+
+static bool is_clean_ascii(const char* s) {
+    // scarta stringhe con controlli (NUL, DEL, ecc.) o caratteri non ammessi
+    for (const unsigned char* p = (const unsigned char*)s; *p; ++p) {
+        if (!is_allowed_ascii_char(*p)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// -------------------------------------------------------------------------------------
 
 BitPacker master_packer = {0};
 BitPacker slave_packer = {0};
@@ -24,10 +60,19 @@ char master_ascii_packet[ASCII_PACKET_SIZE] = {0};
 char slave_ascii_packet[ASCII_PACKET_SIZE] = {0};
 char config_ascii_packet[ASCII_PACKET_SIZE] = {0};
 
-
-
 int test_count = 0;
 
+// ------------------------ Stato timeout per canale (1s) ------------------------------
+static uint64_t last_bit_ms_master  = 0;
+static uint64_t last_bit_ms_slave   = 0;
+static uint64_t last_bit_ms_config  = 0;
+
+static bool timeout_armed_master    = false;
+static bool timeout_armed_slave     = false;
+static bool timeout_armed_config    = false;
+
+#define TIMEOUT_MS 1000
+// -------------------------------------------------------------------------------------
 
 static char* buffer_for_packer(BitPacker* packer) {
     if (packer == &master_packer) return master_ascii_packet;
@@ -47,51 +92,6 @@ bool update_packet(BitPacker* packer_, char* label_){
     }else{
         return false;
     }
-}
-
-char* add_bit(BitPacker* packer, uint8_t signal_code, const char* label) {
-    char* out = buffer_for_packer(packer);
-    out[0] = '\0';
-    size_t array_index_ = packer->array_index;
-    size_t bit_index = packer->bit_position;
-
-    serial_write_formatted("Info: Array_index: %d\n", array_index_);
-
-    if (signal_code <= 9) {
-        if(signal_code <= 6){
-            //Si è nell'arco dai 1 ai 7 zeri quindi nessun codice speciale come 21 volte 0 (flush)
-            //Trascrive tutti gli 0
-            for(int i = 0; i < signal_code+1; i++){
-                packer->arrays[array_index_][bit_index] = 0;
-                if(update_packet(packer, label)){
-                    return flush_and_convert_to_ascii(packer, label);
-                }
-                array_index_ = packer->array_index;
-                bit_index = packer->bit_position;
-            }
-        }
-        if(signal_code == 8){
-            //Code 8 = 21 volte 0 (flush)
-            printf("%s: %d consecutive 1s (code 8). Auto flush.\n", label, MAX_CONSECUTIVE_ZEROS);
-            return flush_and_convert_to_ascii(packer, label);
-        }
-    } else {
-        if(signal_code <= 19){
-            //Si è nell'arco dai 1 ai 7 uno 
-            //Trascrive tutti gli 1
-            signal_code = signal_code%10;
-            for(int i = 0; i < signal_code+1; i++){
-                packer->arrays[array_index_][bit_index] = 1;
-                if(update_packet(packer, label)){
-                    return flush_and_convert_to_ascii(packer, label);
-                }                array_index_ = packer->array_index;
-                bit_index = packer->bit_position;
-            }
-        }
-    }
-
-
-    return out;
 }
 
 char* flush_and_convert_to_ascii(BitPacker* packer, const char* label) {
@@ -119,16 +119,10 @@ char* flush_and_convert_to_ascii(BitPacker* packer, const char* label) {
             byte_index = 0;
             array_index++;
         }
-        char bits[7];
-        int done_count = 0;
+        char bits[8] = {0}; // <-- assicurati che sia terminato a NUL
         for (size_t j = 0; j < 7; j++) {
-            if(packer->arrays[array_index][byte_index + j] == -1){
-            } else{
-                bits[j] = packer->arrays[array_index][byte_index + j] ? '1' : '0';
-                done_count++;
-            }
+            bits[j] = packer->arrays[array_index][byte_index + j] ? '1' : '0';
         }
-
 
         unsigned long value = strtoul(bits, NULL, 2);
         buffer[buf_idx++] = (char)value;
@@ -148,49 +142,138 @@ char* flush_and_convert_to_ascii(BitPacker* packer, const char* label) {
     return buffer;
 }
 
+// ------------------------ Flush condizionato da timeout + validazione ----------------
+static char* timeout_flush_if_needed(BitPacker* packer,
+                                     const char* label,
+                                     bool* timeout_armed,
+                                     uint64_t last_bit_ms,
+                                     bool no_new_bit_this_tick)
+{
+    if (!*timeout_armed) return NULL;
+    if (!no_new_bit_this_tick) return NULL; // è arrivato un bit ora: non flussare
+
+    uint64_t tnow = now_ms();
+    if ((tnow - last_bit_ms) < TIMEOUT_MS) return NULL;
+
+    // Scatta timeout: flush + validazione ASCII
+    char* out = flush_and_convert_to_ascii(packer, label);
+    if (out && out[0]) {
+        if (!is_clean_ascii(out)) {
+            printf("%s: flush scartato (caratteri non ammessi). Considerato sporcizia.\n", label);
+            out[0] = '\0'; // scarta il pacchetto
+        }
+    }
+
+    *timeout_armed = false; // finestra chiusa
+    return out;
+}
+// -------------------------------------------------------------------------------------
+
+char* add_bit(BitPacker* packer, uint8_t signal_code, const char* label) {
+    char* out = buffer_for_packer(packer);
+    out[0] = '\0';
+    size_t array_index_ = packer->array_index;
+    size_t bit_index = packer->bit_position;
+
+    serial_write_formatted("Info: Array_index: %d\n", array_index_);
+
+    if (signal_code <= 9) {
+        if(signal_code <= 6){
+            for(int i = 0; i < signal_code+1; i++){
+                packer->arrays[array_index_][bit_index] = 0;
+                if(update_packet(packer, (char*)label)){
+                    return flush_and_convert_to_ascii(packer, label);
+                }
+                array_index_ = packer->array_index;
+                bit_index = packer->bit_position;
+            }
+        }
+        if(signal_code == 8){
+            // Code 8 = 21 zeri (flush immediato)
+            printf("%s: %d consecutive 1s (code 8). Auto flush.\n", label, MAX_CONSECUTIVE_ZEROS);
+            return flush_and_convert_to_ascii(packer, label);
+        }
+    } else {
+        if(signal_code <= 19){
+            signal_code = signal_code%10;
+            for(int i = 0; i < signal_code+1; i++){
+                packer->arrays[array_index_][bit_index] = 1;
+                if(update_packet(packer, (char*)label)){
+                    return flush_and_convert_to_ascii(packer, label);
+                }
+                array_index_ = packer->array_index;
+                bit_index = packer->bit_position;
+            }
+        }
+    }
+
+    return out;
+}
+
 void process_tone_bits(struct_tone_bits input) {
-    bool has_tone_master = false;
-    bool has_tone_slave = false;
-    bool has_tone_config = false;
-    if (input.master >= 0) has_tone_master = true;
-    if (input.slave >= 0) has_tone_slave = true;
-    if (input.configuration >= 0) has_tone_config = true;
-    //printf("Info: Received bits - Master: %d, Slave: %d, Config: %d\n", input.master, input.slave, input.configuration);
-    //printf("has_tone_master: %d, has_tone_slave: %d, has_tone_config: %d\n", has_tone_master, has_tone_slave, has_tone_config);
+    bool has_tone_master = (input.master >= 0);
+    bool has_tone_slave  = (input.slave >= 0);
+    bool has_tone_config = (input.configuration >= 0);
 
-    if (!has_tone_master) {
-        noise_flag_master = true;
-    }
-    
-    if (!has_tone_slave) {
-        noise_flag_slave = true;
-    }
-
-    if (!has_tone_config) {
-        noise_flag_config = true;
-    }
+    // Mantieni la logica "noise" esistente
+    if (!has_tone_master) noise_flag_master = true;
+    if (!has_tone_slave)  noise_flag_slave  = true;
+    if (!has_tone_config) noise_flag_config = true;
 
     if (!noise_flag_master && !noise_flag_slave && !noise_flag_config) {
+        // Nessun canale in rumore ⇒ nulla da fare
         return;
     }
 
-    if ((input.master >= 0) && noise_flag_master) {
+    // 1) Prima: gestisci timeout (se in questa "tick" non è arrivato un nuovo bit per quel canale)
+    (void)timeout_flush_if_needed(&master_packer, "MASTER", &timeout_armed_master, last_bit_ms_master, !has_tone_master);
+    (void)timeout_flush_if_needed(&slave_packer,  "SLAVE",  &timeout_armed_slave,  last_bit_ms_slave,  !has_tone_slave);
+    (void)timeout_flush_if_needed(&config_packer, "CONFIG", &timeout_armed_config, last_bit_ms_config, !has_tone_config);
+
+    uint64_t tnow = now_ms();
+
+    // 2) Poi: processa eventuali nuovi bit
+    if (has_tone_master && noise_flag_master) {
         printf(" %d- ", input.master);
-        add_bit(&master_packer, input.master, "MASTER");
+
+        // Se è code 8, flush immediato e disarma timeout
+        if (input.master == 8) {
+            (void)add_bit(&master_packer, input.master, "MASTER");
+            timeout_armed_master = false;
+        } else {
+            (void)add_bit(&master_packer, input.master, "MASTER");
+            // arma la finestra di 1s in attesa del prossimo bit o di code 8
+            timeout_armed_master = true;
+            last_bit_ms_master = tnow;
+        }
         noise_flag_master = false;
     }
-    if ((input.slave >= 0) && noise_flag_slave) {
-        add_bit(&slave_packer, input.slave, "SLAVE");
+
+    if (has_tone_slave && noise_flag_slave) {
+        if (input.slave == 8) {
+            (void)add_bit(&slave_packer, input.slave, "SLAVE");
+            timeout_armed_slave = false;
+        } else {
+            (void)add_bit(&slave_packer, input.slave, "SLAVE");
+            timeout_armed_slave = true;
+            last_bit_ms_slave = tnow;
+        }
         noise_flag_slave = false;
     }
-    if ((input.configuration >= 0) && noise_flag_config) {
-        add_bit(&config_packer, input.configuration, "CONFIG");
+
+    if (has_tone_config && noise_flag_config) {
+        if (input.configuration == 8) {
+            (void)add_bit(&config_packer, input.configuration, "CONFIG");
+            timeout_armed_config = false;
+        } else {
+            (void)add_bit(&config_packer, input.configuration, "CONFIG");
+            timeout_armed_config = true;
+            last_bit_ms_config = tnow;
+        }
         noise_flag_config = false;
     }
-
 }
 
 #ifdef __cplusplus
 }
 #endif
-
