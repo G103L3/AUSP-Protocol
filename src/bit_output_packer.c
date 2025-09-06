@@ -64,7 +64,8 @@ bool bit_output_packer_compress(BitOutputPacker* packer, const char* text){
 
                 printf(" %d i: %d len-1: %d \n", bit, i, len-1);
                 if(bit == 0){
-                    if(last != bit || (i == len-1 && b == 0 && consecutive_packing_zeroes > 0)){
+                    bool check_zero = i == len-1 && b == 0 && consecutive_packing_zeroes > 0;
+                    if(last != bit && !check_zero){
                         if(last != 2){
                             printf(" -> ZIPPED (stampa gli 1 precedenti): %d \n", consecutive_packing_ones);
                             zipped_pack[zipped_array_index][zipped_position] = 10 + consecutive_packing_ones-1;
@@ -78,14 +79,26 @@ bool bit_output_packer_compress(BitOutputPacker* packer, const char* text){
                         }
                         consecutive_packing_ones = 0;
                     }
+
                     last = 0;
                     consecutive_packing_zeroes++;
+
+                    if(check_zero){
+                        //Gestione ultimo 0
+                        zipped_pack[zipped_array_index][zipped_position] = consecutive_packing_zeroes-1;
+                        printf("-> POS (stampa gli 0 precedenti): %d %d %d \n", zipped_position, consecutive_packing_zeroes, zipped_pack[zipped_array_index][zipped_position]);
+                        zipped_position++;
+                        if(zipped_position >= ZIPPED_ARRAY_SIZE){
+                            zipped_position = 0;
+                            zipped_array_index++;
+                        }
+                    }
 
                 }
                 if(bit == 1){
                     printf("consecutive_packing_ones: %d \n", consecutive_packing_ones);
                     bool check_one = i == len-1 && b == 0 && consecutive_packing_ones > 0;
-                    if(last != bit){
+                    if(last != bit && !check_one){
                         if(last != 2 && !check_one){
                             printf("-> ZIPPED (stampa gli 0 precedenti): %d \n", consecutive_packing_zeroes);
                             zipped_pack[zipped_array_index][zipped_position] = consecutive_packing_zeroes-1;
@@ -100,11 +113,13 @@ bool bit_output_packer_compress(BitOutputPacker* packer, const char* text){
 
                         consecutive_packing_zeroes = 0;
                     }
+                    
                     last = 1;
                     consecutive_packing_ones++;
 
                     if(check_one){
                         zipped_pack[zipped_array_index][zipped_position] = 10 + consecutive_packing_ones-1;
+                        printf("-> POS (stampa gli 1 precedenti): %d %d %d \n", zipped_position, consecutive_packing_ones, zipped_pack[zipped_array_index][zipped_position]);
                         zipped_position++;
                         if(zipped_position >= ZIPPED_ARRAY_SIZE){
                             zipped_position = 0;
