@@ -159,7 +159,7 @@ void setup() {
     if(G_LINEAR_REGRESSION_MODE == 0 && G_TESTING_MODE != 2) {
         bit_output_packer_init(&out_packer);
         if(bit_output_packer_compress(&out_packer, "HELLO")){
-            if(bit_output_packer_convert(&out_packer, 0)){
+            if(bit_output_packer_convert(&out_packer, 2)){
                 out_pairs = out_packer.pairs;
                 out_len = out_packer.pair_count;
             }
