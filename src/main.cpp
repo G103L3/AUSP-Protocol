@@ -37,6 +37,8 @@ static struct_out_tones* out_pairs = NULL;
 static size_t out_len = 0;
 static bool message_sent = false;
 
+bool hotspot_mode = false;
+
 
 static void wait_for_next_decasecond() {
     const uint32_t SLOT_MS = 10000;
@@ -122,7 +124,15 @@ static void process_ready_packets(){
 void setup() {
     Serial.begin(115200);
     memset(sequence, 0, G_SEQUENCE_LENGTH);
- 
+
+    pinMode(HOTSPOT_PIN, INPUT);
+
+    hotspot_mode = digitalRead(HOTSPOT_PIN);
+    if(hotspot_mode) {
+        printf(" ______________________\n");
+        printf("| HotSpot mode enabled |\n");
+        printf("\\______________________|\n");
+    }
      /*Inizializzazione audio driver I2S*/
      audio_init();
     /* Inizializzazione reader DMA */

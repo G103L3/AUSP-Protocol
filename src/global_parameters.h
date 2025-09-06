@@ -28,7 +28,7 @@
 
 #define G_LINEAR_REGRESSION_MODE 0 // 0: No linear regression, 1: Linear regression Emitting 2: Linear regression Decoding 
 
-#define G_TESTING_MODE 2 // 0: Both modes active, 1: Only Emitting, 2: Only Decoding
+#define G_TESTING_MODE 1 // 0: Both modes active, 1: Only Emitting, 2: Only Decoding
 
 //AUSP frequencies Pattern
 #define MASTER_BASE 1000
@@ -48,6 +48,8 @@
 #define I2S_MIC_BCK_PIN 33   // BCLK
 #define I2S_MIC_WS_PIN  32  // LRCL (word select)
 #define I2S_MIC_SD_PIN  35  // DOUT
+//Pin HotSpot mode
+#define HOTSPOT_PIN     34    // Pin to enable HotSpot mode (HIGH = HotSpot mode enabled)
 
 
 typedef struct struct_out_tones {
