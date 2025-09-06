@@ -1,5 +1,6 @@
 #include "char_packet_router.h"
 #include "char_packet_printer.h"
+#include "protocol.h"
 #include <string.h>
 
 static CharPacket master_out;
@@ -21,6 +22,10 @@ static CharPacket *output_for(ChannelType ch){
 }
 
 void char_packet_router_route(ChannelType ch, const char *msg){
+    if(ch == CHANNEL_CONFIG){
+        protocol_handle_config(msg, &config_out);
+        return;
+    }
     if(strchr(msg, '5') != NULL){
         char_packet_printer_print(msg);
     } else {

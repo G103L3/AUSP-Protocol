@@ -24,9 +24,10 @@
 #include "bit_input_packer.h"
 #include "bit_output_packer.h"
 #include "char_packet_router.h"
+#include "protocol.h"
 //#include <HardwareSerial.h>
 #include <WiFi.h>
-#include <WiFiClient.h> 
+#include <WiFiClient.h>
  
 #include "emit_tones.h"
  
@@ -143,6 +144,7 @@ void setup() {
     pinMode(HOTSPOT_PIN, INPUT);
 
     hotspot_mode = digitalRead(HOTSPOT_PIN);
+    protocol_init(hotspot_mode);
     if(hotspot_mode) {
         printf(" ______________________\n");
         printf("| HotSpot mode enabled |\n");
@@ -174,6 +176,10 @@ void setup() {
     }
 
     char_packet_router_init();
+    if(!hotspot_mode){
+        CharPacket *cfg_out = char_packet_router_get_output(CHANNEL_CONFIG);
+        protocol_request_registration(cfg_out);
+    }
     Blynk.virtualWrite(V1, "_____________________\n");
     Blynk.virtualWrite(V1, "| HotSpot Device ON |\n");
     Blynk.virtualWrite(V1, "\\___________________|\n");
