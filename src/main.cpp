@@ -24,8 +24,9 @@
 #include "bit_input_packer.h"
 #include "bit_output_packer.h"
 //#include <HardwareSerial.h>
- 
+
 #include "emit_tones.h"
+#include "packet_router.h"
  
 extern "C" {
     #include "global_parameters.h"
@@ -89,6 +90,8 @@ void setup() {
      audio_init();
     /* Inizializzazione reader DMA */
     reader_init();
+
+    packet_router_init();
 
     if(G_LINEAR_REGRESSION_MODE == 0 && G_TESTING_MODE != 2) {
         bit_output_packer_init(&out_packer);

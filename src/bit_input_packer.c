@@ -10,6 +10,7 @@ extern "C" {
 #include "serial_bridge.h"
 #include "bit_input_packer.h"
 #include "global_parameters.h"
+#include "packet_router.h"
 
 #define TOTAL_BITS (MAX_ARRAY_SIZE * NUM_ARRAYS * 7)
 
@@ -163,6 +164,14 @@ bool flush_and_convert_to_ascii(BitPacker* packer, const char* label) {
     if (packer->ascii_array_index < ASCII_NUM_ARRAYS && packer->ascii_char_index < ASCII_ARRAY_SIZE) {
         ascii_dest[packer->ascii_array_index][packer->ascii_char_index] = '\0';
     }
+
+    PacketChannel ch = CHANNEL_CONFIG;
+    if (packer == &master_packer) {
+        ch = CHANNEL_MASTER;
+    } else if (packer == &slave_packer) {
+        ch = CHANNEL_SLAVE;
+    }
+    packet_router_process_ascii(ch, temp);
 
     packer->array_index = 0;
     packer->bit_position = 0;
