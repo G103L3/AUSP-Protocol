@@ -30,6 +30,10 @@ typedef struct {
     size_t array_index;
     size_t ascii_char_index;
     size_t ascii_array_index;
+    size_t codes_char_index;
+    size_t codes_array_index;
+    uint8_t codes_packet[ASCII_PACKET_SIZE];
+    size_t codes_packet_index;
 } BitPacker;
 
 /**
@@ -59,6 +63,14 @@ extern BitPacker config_packer;
 extern char master_ascii_arrays[ASCII_NUM_ARRAYS][ASCII_ARRAY_SIZE];
 extern char slave_ascii_arrays[ASCII_NUM_ARRAYS][ASCII_ARRAY_SIZE];
 extern char config_ascii_arrays[ASCII_NUM_ARRAYS][ASCII_ARRAY_SIZE];
+
+extern uint8_t master_codes_arrays[ASCII_NUM_ARRAYS][ASCII_ARRAY_SIZE];
+extern uint8_t slave_codes_arrays[ASCII_NUM_ARRAYS][ASCII_ARRAY_SIZE];
+extern uint8_t config_codes_arrays[ASCII_NUM_ARRAYS][ASCII_ARRAY_SIZE];
+
+size_t bit_input_packer_total_code_sections(BitPacker* packer);
+bool bit_input_packer_get_code_section(BitPacker* packer, size_t section, uint8_t* out, size_t* out_len);
+bool bit_input_packer_remove_code_section(BitPacker* packer, size_t section);
 
 
 
