@@ -22,22 +22,17 @@
 #include "audio_driver.h"
 #include "bit_freq_codec.h"
 #include "bit_input_packer.h"
-#include "bit_output_packer.h"
 #include "char_packet_router.h"
+#include "protocol.h"
 //#include <HardwareSerial.h>
 #include <WiFi.h>
-#include <WiFiClient.h> 
+#include <WiFiClient.h>
  
 #include "emit_tones.h"
  
 extern "C" {
     #include "global_parameters.h"
 }
-
-static BitOutputPacker out_packer;
-static struct_out_tones* out_pairs = NULL;
-static size_t out_len = 0;
-static bool message_sent = false;
 
 bool hotspot_mode = false;
 
@@ -153,27 +148,10 @@ void setup() {
      audio_init();
     /* Inizializzazione reader DMA */
     reader_init();
-
-    if(G_LINEAR_REGRESSION_MODE == 0 && G_TESTING_MODE != 2) {
-        bit_output_packer_init(&out_packer);
-        if(bit_output_packer_compress(&out_packer, "HELLO")){
-            if(bit_output_packer_convert(&out_packer, 0)){
-                out_pairs = out_packer.pairs;
-                out_len = out_packer.pair_count;
-            }
-        }
-
-        status_flag = 1;
-        if(!message_sent && out_len > 0) {
-            emit_tones(out_pairs, out_len);
-            bit_output_packer_free(&out_packer);
-            out_pairs = NULL;
-            out_len = 0;
-            message_sent = true;
-        }
-    }
+    status_flag = 1;
 
     char_packet_router_init();
+    protocol_init(hotspot_mode);
     Blynk.virtualWrite(V1, "_____________________\n");
     Blynk.virtualWrite(V1, "| HotSpot Device ON |\n");
     Blynk.virtualWrite(V1, "\\___________________|\n");
@@ -184,12 +162,13 @@ void setup() {
  */
 void loop() {
     if(G_LINEAR_REGRESSION_MODE == 1) {
-        int freqs[9] = {1000, 2000, 3000, 4000, 5500, 7000, 8000, 9000, 10000};
+        int freqs[9] = {1000, 1600, 2200, 2800, 3400, 4000, 4600, 5200, 5800};
         play_nine_tones(freqs);
     }
     if(data_ready) {
         decoder_operations();
         process_ready_packets();
+        protocol_tick();
         if(hotspot_mode) {
             Blynk.run();
         }

@@ -30,11 +30,11 @@
 
 #define G_TESTING_MODE 1 // 0: Both modes active, 1: Only Emitting, 2: Only Decoding
 
-//AUSP frequencies Pattern
+//AUSP frequencies Pattern (lowered to fit typical speaker range)
 #define MASTER_BASE 1000
-#define SLAVE_BASE 8600
-#define CONFIG_BASE 16200
-#define TONE_STEP 400
+#define SLAVE_BASE 3200
+#define CONFIG_BASE 5400
+#define TONE_STEP 100
 #define ROW_LEN      19
 
 //MAP PINS
