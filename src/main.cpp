@@ -24,6 +24,7 @@
 #include "bit_input_packer.h"
 #include "bit_output_packer.h"
 #include "char_packet_router.h"
+#include "protocol.h"
 //#include <HardwareSerial.h>
 #include <WiFi.h>
 #include <WiFiClient.h> 
@@ -40,6 +41,7 @@ static size_t out_len = 0;
 static bool message_sent = false;
 
 bool hotspot_mode = false;
+static ProtocolState proto_state;
 
 // Blynk
  //Blynk Data
@@ -98,6 +100,28 @@ static void process_ready_packets(){
     }
 }
 
+static void process_protocol_packets(){
+    char msg[PROTOCOL_MAX_PACKET];
+    CharPacket *cp = char_packet_router_get_output(CHANNEL_CONFIG);
+    while(char_packet_pop(cp, msg, sizeof(msg))){
+        char resp[PROTOCOL_MAX_PACKET];
+        if(protocol_handle_packet(&proto_state, msg, resp, sizeof(resp))){
+            bit_output_packer_init(&out_packer);
+            if(bit_output_packer_compress(&out_packer, resp)){
+                if(bit_output_packer_convert(&out_packer, 2)){
+                    out_pairs = out_packer.pairs;
+                    out_len = out_packer.pair_count;
+                }
+            }
+            if(out_len > 0){
+                emit_tones(out_pairs, out_len);
+                bit_output_packer_free(&out_packer);
+                out_pairs=NULL; out_len=0;
+            }
+        }
+    }
+}
+
  // Variabili globali
  char sequence[G_SEQUENCE_LENGTH];
  char last_char = 'N';
@@ -143,6 +167,7 @@ void setup() {
     pinMode(HOTSPOT_PIN, INPUT);
 
     hotspot_mode = digitalRead(HOTSPOT_PIN);
+    protocol_init(&proto_state, hotspot_mode);
     if(hotspot_mode) {
         printf(" ______________________\n");
         printf("| HotSpot mode enabled |\n");
@@ -154,22 +179,22 @@ void setup() {
     /* Inizializzazione reader DMA */
     reader_init();
 
-    if(G_LINEAR_REGRESSION_MODE == 0 && G_TESTING_MODE != 2) {
-        bit_output_packer_init(&out_packer);
-        if(bit_output_packer_compress(&out_packer, "HELLO")){
-            if(bit_output_packer_convert(&out_packer, 0)){
-                out_pairs = out_packer.pairs;
-                out_len = out_packer.pair_count;
+    if(!hotspot_mode){
+        char pkt[PROTOCOL_MAX_PACKET];
+        if(protocol_build_config_request(&proto_state, pkt, sizeof(pkt))){
+            bit_output_packer_init(&out_packer);
+            if(bit_output_packer_compress(&out_packer, pkt)){
+                if(bit_output_packer_convert(&out_packer, 2)){
+                    out_pairs = out_packer.pairs;
+                    out_len = out_packer.pair_count;
+                }
             }
-        }
-
-        status_flag = 1;
-        if(!message_sent && out_len > 0) {
-            emit_tones(out_pairs, out_len);
-            bit_output_packer_free(&out_packer);
-            out_pairs = NULL;
-            out_len = 0;
-            message_sent = true;
+            if(out_len > 0){
+                emit_tones(out_pairs, out_len);
+                bit_output_packer_free(&out_packer);
+                out_pairs = NULL;
+                out_len = 0;
+            }
         }
     }
 
@@ -190,6 +215,7 @@ void loop() {
     if(data_ready) {
         decoder_operations();
         process_ready_packets();
+        process_protocol_packets();
         if(hotspot_mode) {
             Blynk.run();
         }
