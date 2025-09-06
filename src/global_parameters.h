@@ -32,9 +32,9 @@
 
 //AUSP frequencies Pattern
 #define MASTER_BASE 1000
-#define SLAVE_BASE 8600
-#define CONFIG_BASE 16200
-#define TONE_STEP 400
+#define SLAVE_BASE 5000
+#define CONFIG_BASE 9200
+#define TONE_STEP 200
 #define ROW_LEN      19
 
 //MAP PINS
