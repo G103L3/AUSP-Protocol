@@ -60,6 +60,10 @@ extern char master_ascii_arrays[ASCII_NUM_ARRAYS][ASCII_ARRAY_SIZE];
 extern char slave_ascii_arrays[ASCII_NUM_ARRAYS][ASCII_ARRAY_SIZE];
 extern char config_ascii_arrays[ASCII_NUM_ARRAYS][ASCII_ARRAY_SIZE];
 
+extern bool master_ascii_ready;
+extern bool slave_ascii_ready;
+extern bool config_ascii_ready;
+
 
 
 

@@ -60,6 +60,10 @@ char master_ascii_arrays[ASCII_NUM_ARRAYS][ASCII_ARRAY_SIZE] = {0};
 char slave_ascii_arrays[ASCII_NUM_ARRAYS][ASCII_ARRAY_SIZE] = {0};
 char config_ascii_arrays[ASCII_NUM_ARRAYS][ASCII_ARRAY_SIZE] = {0};
 
+bool master_ascii_ready = false;
+bool slave_ascii_ready = false;
+bool config_ascii_ready = false;
+
 int test_count = 0;
 
 // ------------------------ Stato timeout per canale (1s) ------------------------------
@@ -167,6 +171,9 @@ bool flush_and_convert_to_ascii(BitPacker* packer, const char* label) {
     packer->array_index = 0;
     packer->bit_position = 0;
     memset(packer->arrays, 0, sizeof(packer->arrays));
+    if (packer == &master_packer) master_ascii_ready = true;
+    else if (packer == &slave_packer) slave_ascii_ready = true;
+    else if (packer == &config_packer) config_ascii_ready = true;
     return true;
 }
 
