@@ -111,13 +111,13 @@ struct_out_tones frequency_coder(int bit, int role){
     //10 = un 1; 11 = due 1; 12 = tre 1; 13 = quattro 1; 14 = cinque 1; 15 = sei 1; 16 = sette 1; 17 = 14 1; 18 = 21 1
     if (role == 0) { // Master
         out_tones.tones[0] = MASTER_BASE + (bit * TONE_STEP); // Frequenza di segnale per il master
-        out_tones.tones[1] = MASTER_BASE + (TONE_STEP * 18); // 4600 Hz portante master
+        out_tones.tones[1] = MASTER_BASE + (TONE_STEP * 18); // 8200 Hz portante master
     } else if (role == 1) { // Slave
         out_tones.tones[0] = SLAVE_BASE + (bit * TONE_STEP); // Frequenza di segnale per lo slave
-        out_tones.tones[1] = SLAVE_BASE + (TONE_STEP * 18); // 8400 Hz portante slave
+        out_tones.tones[1] = SLAVE_BASE + (TONE_STEP * 18); // 12000 Hz portante slave
     } else if (role== 2) { // Configuration
         out_tones.tones[0] = CONFIG_BASE + (bit * TONE_STEP); // Frequenza di segnale per il config
-        out_tones.tones[1] = CONFIG_BASE + (TONE_STEP * 18); // 12200 Hz portante config
+        out_tones.tones[1] = CONFIG_CARRIER; // 700 Hz portante config
     }
 
     return out_tones;
