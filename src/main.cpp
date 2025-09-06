@@ -24,9 +24,10 @@
 #include "bit_input_packer.h"
 #include "bit_output_packer.h"
 #include "char_packet_router.h"
+#include "protocol.h"
 //#include <HardwareSerial.h>
 #include <WiFi.h>
-#include <WiFiClient.h> 
+#include <WiFiClient.h>
  
 #include "emit_tones.h"
  
@@ -174,6 +175,7 @@ void setup() {
     }
 
     char_packet_router_init();
+    protocol_init(hotspot_mode);
     Blynk.virtualWrite(V1, "_____________________\n");
     Blynk.virtualWrite(V1, "| HotSpot Device ON |\n");
     Blynk.virtualWrite(V1, "\\___________________|\n");
@@ -190,6 +192,7 @@ void loop() {
     if(data_ready) {
         decoder_operations();
         process_ready_packets();
+        protocol_tick();
         if(hotspot_mode) {
             Blynk.run();
         }
