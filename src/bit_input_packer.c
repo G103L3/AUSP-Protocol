@@ -59,6 +59,9 @@ static bool noise_flag_config = false;
 char master_ascii_arrays[ASCII_NUM_ARRAYS][ASCII_ARRAY_SIZE] = {0};
 char slave_ascii_arrays[ASCII_NUM_ARRAYS][ASCII_ARRAY_SIZE] = {0};
 char config_ascii_arrays[ASCII_NUM_ARRAYS][ASCII_ARRAY_SIZE] = {0};
+int master_codes_arrays[CODE_NUM_ARRAYS][CODE_ARRAY_SIZE] = {0};
+int slave_codes_arrays[CODE_NUM_ARRAYS][CODE_ARRAY_SIZE] = {0};
+int config_codes_arrays[CODE_NUM_ARRAYS][CODE_ARRAY_SIZE] = {0};
 
 int test_count = 0;
 
@@ -78,6 +81,12 @@ static char (*ascii_for_packer(BitPacker* packer))[ASCII_ARRAY_SIZE] {
     if (packer == &master_packer) return master_ascii_arrays;
     if (packer == &slave_packer) return slave_ascii_arrays;
     return config_ascii_arrays;
+}
+
+static int (*codes_for_packer(BitPacker* packer))[CODE_ARRAY_SIZE] {
+    if (packer == &master_packer) return master_codes_arrays;
+    if (packer == &slave_packer) return slave_codes_arrays;
+    return config_codes_arrays;
 }
 
 bool update_packet(BitPacker* packer_, char* label_){
@@ -139,16 +148,12 @@ bool flush_and_convert_to_ascii(BitPacker* packer, const char* label) {
         printf("%s: flush scartato (caratteri non ammessi). Considerato sporcizia.\n", label);
         packer->array_index = 0;
         packer->bit_position = 0;
+        packer->codes_temp_len = 0;
         memset(packer->arrays, 0, sizeof(packer->arrays));
         return false;
     }
 
     char (*ascii_dest)[ASCII_ARRAY_SIZE] = ascii_for_packer(packer);
-    for (size_t i = 0; i < ASCII_NUM_ARRAYS; i++) {
-        memset(ascii_dest[i], 0, ASCII_ARRAY_SIZE);
-    }
-    packer->ascii_array_index = 0;
-    packer->ascii_char_index = 0;
     for (size_t i = 0; i < buf_idx; i++) {
         ascii_dest[packer->ascii_array_index][packer->ascii_char_index++] = temp[i];
         if (packer->ascii_char_index >= ASCII_ARRAY_SIZE) {
@@ -161,8 +166,27 @@ bool flush_and_convert_to_ascii(BitPacker* packer, const char* label) {
         }
     }
     if (packer->ascii_array_index < ASCII_NUM_ARRAYS && packer->ascii_char_index < ASCII_ARRAY_SIZE) {
-        ascii_dest[packer->ascii_array_index][packer->ascii_char_index] = '\0';
+        ascii_dest[packer->ascii_array_index][packer->ascii_char_index++] = (char)18;
+        if (packer->ascii_char_index < ASCII_ARRAY_SIZE)
+            ascii_dest[packer->ascii_array_index][packer->ascii_char_index] = '\0';
     }
+
+    int (*code_dest)[CODE_ARRAY_SIZE] = codes_for_packer(packer);
+    for (size_t i = 0; i < packer->codes_temp_len; i++) {
+        code_dest[packer->code_array_index][packer->code_index++] = packer->codes_temp[i];
+        if (packer->code_index >= CODE_ARRAY_SIZE) {
+            packer->code_index = 0;
+            packer->code_array_index++;
+            if (packer->code_array_index >= CODE_NUM_ARRAYS) {
+                printf("Warning: %s CODE arrays full.\n", label);
+                break;
+            }
+        }
+    }
+    if (packer->code_array_index < CODE_NUM_ARRAYS && packer->code_index < CODE_ARRAY_SIZE) {
+        code_dest[packer->code_array_index][packer->code_index++] = 18;
+    }
+    packer->codes_temp_len = 0;
 
     packer->array_index = 0;
     packer->bit_position = 0;
@@ -192,6 +216,10 @@ static bool timeout_flush_if_needed(BitPacker* packer,
 bool add_bit(BitPacker* packer, uint8_t signal_code, const char* label) {
     size_t array_index_ = packer->array_index;
     size_t bit_index = packer->bit_position;
+
+    if(signal_code != 8 && packer->codes_temp_len < CODE_PACKET_SIZE){
+        packer->codes_temp[packer->codes_temp_len++] = signal_code;
+    }
 
     serial_write_formatted("Info: Array_index: %d\n", array_index_);
 
@@ -294,6 +322,82 @@ bool process_tone_bits(struct_tone_bits input) {
     }
 
     return packet_ready;
+}
+
+size_t bit_input_packer_get_codes_sections(BitPacker* packer){
+    int (*codes)[CODE_ARRAY_SIZE] = codes_for_packer(packer);
+    size_t total = packer->code_array_index * CODE_ARRAY_SIZE + packer->code_index;
+    size_t count = 0;
+    for(size_t idx = 0; idx < total; idx++){
+        size_t arr = idx / CODE_ARRAY_SIZE;
+        size_t pos = idx % CODE_ARRAY_SIZE;
+        if(codes[arr][pos] == 18) count++;
+    }
+    return count;
+}
+
+bool bit_input_packer_get_codes_section(BitPacker* packer, size_t section_index, int* out_codes, size_t* out_len){
+    int (*codes)[CODE_ARRAY_SIZE] = codes_for_packer(packer);
+    size_t total = packer->code_array_index * CODE_ARRAY_SIZE + packer->code_index;
+    size_t curr = 0;
+    size_t start = 0;
+    for(size_t idx = 0; idx < total; idx++){
+        size_t arr = idx / CODE_ARRAY_SIZE;
+        size_t pos = idx % CODE_ARRAY_SIZE;
+        if(codes[arr][pos] == 18){
+            if(curr == section_index){
+                size_t end = idx;
+                if(out_codes){
+                    for(size_t j = start; j < end; j++){
+                        size_t a = j / CODE_ARRAY_SIZE;
+                        size_t p = j % CODE_ARRAY_SIZE;
+                        out_codes[j-start] = codes[a][p];
+                    }
+                }
+                if(out_len) *out_len = end - start;
+                return true;
+            }
+            curr++;
+            start = idx + 1;
+        }
+    }
+    return false;
+}
+
+bool bit_input_packer_remove_codes_section(BitPacker* packer, size_t section_index){
+    int (*codes)[CODE_ARRAY_SIZE] = codes_for_packer(packer);
+    size_t total = packer->code_array_index * CODE_ARRAY_SIZE + packer->code_index;
+    size_t curr = 0;
+    size_t start = 0;
+    for(size_t idx = 0; idx < total; idx++){
+        size_t arr = idx / CODE_ARRAY_SIZE;
+        size_t pos = idx % CODE_ARRAY_SIZE;
+        if(codes[arr][pos] == 18){
+            if(curr == section_index){
+                size_t end = idx;
+                size_t remove_len = end - start + 1;
+                for(size_t i = end + 1; i < total; i++){
+                    size_t arr_from = i / CODE_ARRAY_SIZE;
+                    size_t pos_from = i % CODE_ARRAY_SIZE;
+                    size_t arr_to = (i - remove_len) / CODE_ARRAY_SIZE;
+                    size_t pos_to = (i - remove_len) % CODE_ARRAY_SIZE;
+                    codes[arr_to][pos_to] = codes[arr_from][pos_from];
+                }
+                for(size_t i = total - remove_len; i < total; i++){
+                    size_t arr_to = i / CODE_ARRAY_SIZE;
+                    size_t pos_to = i % CODE_ARRAY_SIZE;
+                    codes[arr_to][pos_to] = 0;
+                }
+                total -= remove_len;
+                packer->code_array_index = total / CODE_ARRAY_SIZE;
+                packer->code_index = total % CODE_ARRAY_SIZE;
+                return true;
+            }
+            curr++;
+            start = idx + 1;
+        }
+    }
+    return false;
 }
 
 #ifdef __cplusplus

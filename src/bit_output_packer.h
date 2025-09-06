@@ -36,12 +36,12 @@ void bit_output_packer_init(BitOutputPacker* packer);
  * @brief Release any memory held by the packer.
  */
 void bit_output_packer_free(BitOutputPacker* packer);
-
-extern int zipped_pack[ZIPPED_NUM_ARRAYS][ZIPPED_ARRAY_SIZE];
-extern size_t zipped_array_index;
-extern size_t zipped_position;
-
 bool bit_output_packer_compress(BitOutputPacker* packer, const char* text);
+bool bit_output_packer_append_ascii(BitOutputPacker* packer, const char* text);
+bool bit_output_packer_append_codes(BitOutputPacker* packer, const int* codes, size_t count);
+size_t bit_output_packer_section_count(void);
+bool bit_output_packer_convert_section(BitOutputPacker* packer, size_t section_index, int role);
+bool bit_output_packer_remove_section(size_t section_index);
 bool bit_output_packer_convert(BitOutputPacker* packer, int role);
 
 #ifdef __cplusplus
