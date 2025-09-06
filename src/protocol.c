@@ -51,20 +51,8 @@ static void log_recv(const char *msg){
 static void log_send(const char *msg){
     if(hotspot && msg_cb){
         char buf[128];
-        snprintf(buf, sizeof(buf), "Invio: %s ", msg);
+        snprintf(buf, sizeof(buf), "Invio: %s\n", msg);
         msg_cb(buf);
-        static const char spin[] = "|/-\\";
-        for(size_t i=0;i<sizeof(spin)-1;i++){
-            char sbuf[3] = {spin[i], '\r', '\0'};
-            msg_cb(sbuf);
-#ifdef ARDUINO
-            delay(100);
-#else
-            struct timespec ts = {0,100000000};
-            nanosleep(&ts, NULL);
-#endif
-        }
-        msg_cb("\n");
     }
 }
 
@@ -228,8 +216,12 @@ void protocol_handle_message(ChannelType ch, const char *msg){
             return;
 
         char dest[5] = {0};
-        strncpy(dest, msg+3, 4);
-        dest[4] = '\0';
+        const char *dest_start = msg + 3;
+        const char *dest_end = strchr(dest_start, '{');
+        size_t dest_len = dest_end ? (size_t)(dest_end - dest_start) : 4;
+        if(dest_len >= sizeof(dest)) dest_len = sizeof(dest) - 1;
+        strncpy(dest, dest_start, dest_len);
+        dest[dest_len] = '\0';
 
         const char *op_start = strchr(msg, '{');
         const char *op_end = strchr(op_start ? op_start+1 : msg, '}');
@@ -242,10 +234,15 @@ void protocol_handle_message(ChannelType ch, const char *msg){
         op_buf[op_len] = '\0';
 
         const char *src_start = strchr(op_end+1, '{');
-        const char *src_end = strchr(src_start ? src_start+1 : op_end, '}');
+        const char *src_end = src_start ? strchr(src_start+1, '}') : NULL;
         char src[5] = {0};
-        if(src_start && src_end){
-            size_t src_len = (size_t)(src_end - src_start -1);
+        if(src_start){
+            size_t src_len;
+            if(src_end){
+                src_len = (size_t)(src_end - src_start -1);
+            } else {
+                src_len = strlen(src_start+1);
+            }
             if(src_len >= sizeof(src)) src_len = sizeof(src)-1;
             strncpy(src, src_start+1, src_len);
             src[src_len] = '\0';
@@ -271,8 +268,12 @@ void protocol_handle_message(ChannelType ch, const char *msg){
     if(ch == CHANNEL_MASTER && !hotspot){
         if(strncmp(msg, "ID:", 3) != 0) return;
         char dest[5] = {0};
-        strncpy(dest, msg+3, 4);
-        dest[4] = '\0';
+        const char *dest_start = msg + 3;
+        const char *dest_end = strchr(dest_start, '{');
+        size_t dest_len = dest_end ? (size_t)(dest_end - dest_start) : 4;
+        if(dest_len >= sizeof(dest)) dest_len = sizeof(dest)-1;
+        strncpy(dest, dest_start, dest_len);
+        dest[dest_len] = '\0';
         if(strcmp(dest, my_id) != 0) return;
         char ack[64];
         snprintf(ack, sizeof(ack), "ID:0000{OK}z{%s}", my_id);
@@ -283,8 +284,12 @@ void protocol_handle_message(ChannelType ch, const char *msg){
     if(ch == CHANNEL_SLAVE && hotspot){
         if(strncmp(msg, "ID:", 3) != 0) return;
         char dest[5] = {0};
-        strncpy(dest, msg+3, 4);
-        dest[4] = '\0';
+        const char *dest_start = msg + 3;
+        const char *dest_end = strchr(dest_start, '{');
+        size_t dest_len = dest_end ? (size_t)(dest_end - dest_start) : 4;
+        if(dest_len >= sizeof(dest)) dest_len = sizeof(dest)-1;
+        strncpy(dest, dest_start, dest_len);
+        dest[dest_len] = '\0';
         if(strcmp(dest, "0000") != 0) return;
         const char *op_start = strchr(msg, '{');
         const char *op_end = strchr(op_start ? op_start+1 : msg, '}');
@@ -295,10 +300,15 @@ void protocol_handle_message(ChannelType ch, const char *msg){
         strncpy(op_buf, op_start+1, op_len);
         op_buf[op_len] = '\0';
         const char *src_start = strchr(op_end+1, '{');
-        const char *src_end = strchr(src_start ? src_start+1 : op_end, '}');
+        const char *src_end = src_start ? strchr(src_start+1, '}') : NULL;
         char src[5] = {0};
-        if(src_start && src_end){
-            size_t src_len = (size_t)(src_end - src_start -1);
+        if(src_start){
+            size_t src_len;
+            if(src_end){
+                src_len = (size_t)(src_end - src_start -1);
+            } else {
+                src_len = strlen(src_start+1);
+            }
             if(src_len >= sizeof(src)) src_len = sizeof(src)-1;
             strncpy(src, src_start+1, src_len);
             src[src_len] = '\0';
