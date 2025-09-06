@@ -12,7 +12,7 @@ extern "C" {
 #include "global_parameters.h"
 
 #define MAX_ARRAY_SIZE 1024
-#define NUM_ARRAYS 10
+#define NUM_ARRAYS 3
 #define MAX_CONSECUTIVE_ZEROS 21
 #define ASCII_ARRAY_SIZE 256
 #define ASCII_NUM_ARRAYS 8
