@@ -195,7 +195,7 @@ void loop() {
 
 BLYNK_WRITE(V1) {
     String input = param.asStr();
-    if(input.equals("CONNS")) {
+    if(input.equalsIgnoreCase("CONNS")) {
         char list[128];
         protocol_list_devices(list, sizeof(list));
         Blynk.virtualWrite(V1, list);

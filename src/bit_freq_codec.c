@@ -117,7 +117,7 @@ struct_out_tones frequency_coder(int bit, int role){
         out_tones.tones[1] = SLAVE_BASE + (TONE_STEP * 18); // 12000 Hz portante slave
     } else if (role== 2) { // Configuration
         out_tones.tones[0] = CONFIG_BASE + (bit * TONE_STEP); // Frequenza di segnale per il config
-        out_tones.tones[1] = CONFIG_CARRIER; // 700 Hz portante config
+        out_tones.tones[1] = CONFIG_CARRIER; // 8600 Hz portante config
     }
 
     return out_tones;

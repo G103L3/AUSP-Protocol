@@ -53,7 +53,7 @@ int ausp_freq[] = {
         SLAVE_BASE + (16 * TONE_STEP), SLAVE_BASE + (17 * TONE_STEP),
         SLAVE_BASE + (18 * TONE_STEP),
     
-        // Terza riga: CONFIG usa le stesse frequenze del master ma con portante a 700 Hz
+        // Terza riga: CONFIG usa le stesse frequenze del master ma con portante a 8600 Hz
         CONFIG_BASE + (0  * TONE_STEP), CONFIG_BASE + (1  * TONE_STEP),
         CONFIG_BASE + (2  * TONE_STEP), CONFIG_BASE + (3  * TONE_STEP),
         CONFIG_BASE + (4  * TONE_STEP), CONFIG_BASE + (5  * TONE_STEP),
