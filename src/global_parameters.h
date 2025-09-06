@@ -28,7 +28,7 @@
 
 #define G_LINEAR_REGRESSION_MODE 0 // 0: No linear regression, 1: Linear regression Emitting 2: Linear regression Decoding 
 
-#define G_TESTING_MODE 1 // 0: Both modes active, 1: Only Emitting, 2: Only Decoding
+#define G_TESTING_MODE 0 // 0: Both modes active, 1: Only Emitting, 2: Only Decoding
 
 //AUSP frequencies Pattern (lowered to fit typical speaker range)
 #define MASTER_BASE 1000
