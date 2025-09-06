@@ -25,6 +25,7 @@
 #include "bit_output_packer.h"
 #include "char_packet_router.h"
 #include "protocol.h"
+#include "command_dict.h"
 //#include <HardwareSerial.h>
 #include <WiFi.h>
 #include <WiFiClient.h>
@@ -47,12 +48,17 @@ bool hotspot_mode = false;
  #define BLYNK_AUTH            "RonJtq8yYARwRVRVgrYYurO-UzhyENr8"
  #define BLYNK_TEMPLATE_ID     "TMPL4tHCnjG_H"
  #define BLYNK_TEMPLATE_NAME   "AUSP"
- #include <BlynkSimpleEsp32.h>
+#include <BlynkSimpleEsp32.h>
 
 
 // WiFi
 const char WIFI_SSID[] PROGMEM  = "CasaMaggi";
 const char WIFI_PASS[]  PROGMEM = "alessiamaggi1971";
+
+static void blynk_print(const char *msg){
+    Blynk.virtualWrite(V1, msg);
+    Blynk.virtualWrite(V1, "\n");
+}
 
 static void wait_for_next_decasecond() {
     const uint32_t SLOT_MS = 10000;
@@ -156,26 +162,12 @@ void setup() {
     reader_init();
 
     if(G_LINEAR_REGRESSION_MODE == 0 && G_TESTING_MODE != 2) {
-        bit_output_packer_init(&out_packer);
-        if(bit_output_packer_compress(&out_packer, "HELLO")){
-            if(bit_output_packer_convert(&out_packer, 0)){
-                out_pairs = out_packer.pairs;
-                out_len = out_packer.pair_count;
-            }
-        }
-
         status_flag = 1;
-        if(!message_sent && out_len > 0) {
-            emit_tones(out_pairs, out_len);
-            bit_output_packer_free(&out_packer);
-            out_pairs = NULL;
-            out_len = 0;
-            message_sent = true;
-        }
     }
 
     char_packet_router_init();
     protocol_init(hotspot_mode);
+    protocol_set_message_callback(blynk_print);
     Blynk.virtualWrite(V1, "_____________________\n");
     Blynk.virtualWrite(V1, "| HotSpot Device ON |\n");
     Blynk.virtualWrite(V1, "\\___________________|\n");
@@ -203,6 +195,19 @@ void loop() {
 
 
 BLYNK_WRITE(V1) {
-    String input = param.asStr();       // prendo il testo inviato dal Terminal widget
-    printf("Ricevuto da Blynk V0: %s\n", input.c_str());  // stampo via printf su Serial
+    String input = param.asStr();
+    if(input.equals("CONNS")) {
+        char list[128];
+        protocol_list_devices(list, sizeof(list));
+        Blynk.virtualWrite(V1, list);
+        return;
+    }
+    int arrow = input.indexOf("->");
+    if(arrow > 0){
+        String op = input.substring(0, arrow);
+        String dest = input.substring(arrow+2);
+        if(command_from_string(op.c_str()) != CMD_UNKNOWN){
+            protocol_send_command(dest.c_str(), op.c_str());
+        }
+    }
 }
