@@ -23,6 +23,7 @@
 #include "bit_freq_codec.h"
 #include "bit_input_packer.h"
 #include "bit_output_packer.h"
+#include "char_packet_router.h"
 //#include <HardwareSerial.h>
  
 #include "emit_tones.h"
@@ -44,7 +45,44 @@ static void wait_for_next_decasecond() {
     uint32_t wait_ms = remainder ? (SLOT_MS - remainder) : 0;
     delay(wait_ms);
 }
- 
+
+static void process_ready_packets(){
+    char buffer[ASCII_PACKET_SIZE] = {0};
+    if(master_ascii_ready){
+        size_t idx=0;
+        for(size_t i=0;i<ASCII_NUM_ARRAYS;i++){
+            for(size_t j=0;j<ASCII_ARRAY_SIZE && master_ascii_arrays[i][j];j++){
+                buffer[idx++] = master_ascii_arrays[i][j];
+            }
+        }
+        buffer[idx]='\0';
+        char_packet_router_route(CHANNEL_MASTER, buffer);
+        master_ascii_ready=false;
+    }
+    if(slave_ascii_ready){
+        size_t idx=0;
+        for(size_t i=0;i<ASCII_NUM_ARRAYS;i++){
+            for(size_t j=0;j<ASCII_ARRAY_SIZE && slave_ascii_arrays[i][j];j++){
+                buffer[idx++] = slave_ascii_arrays[i][j];
+            }
+        }
+        buffer[idx]='\0';
+        char_packet_router_route(CHANNEL_SLAVE, buffer);
+        slave_ascii_ready=false;
+    }
+    if(config_ascii_ready){
+        size_t idx=0;
+        for(size_t i=0;i<ASCII_NUM_ARRAYS;i++){
+            for(size_t j=0;j<ASCII_ARRAY_SIZE && config_ascii_arrays[i][j];j++){
+                buffer[idx++] = config_ascii_arrays[i][j];
+            }
+        }
+        buffer[idx]='\0';
+        char_packet_router_route(CHANNEL_CONFIG, buffer);
+        config_ascii_ready=false;
+    }
+}
+
  // Variabili globali
  char sequence[G_SEQUENCE_LENGTH];
  char last_char = 'N';
@@ -98,7 +136,7 @@ void setup() {
                 out_len = out_packer.pair_count;
             }
         }
-    
+
         status_flag = 1;
         if(!message_sent && out_len > 0) {
             emit_tones(out_pairs, out_len);
@@ -109,7 +147,8 @@ void setup() {
         }
     }
 
- }
+    char_packet_router_init();
+}
  
  /*! \fn void loop(void)
  * \brief Loop principale
@@ -121,7 +160,8 @@ void loop() {
     }
     if(data_ready) {
         decoder_operations();
+        process_ready_packets();
         data_ready = 0;
     }
-    
+
 }
