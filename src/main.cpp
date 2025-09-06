@@ -25,6 +25,8 @@
 #include "bit_output_packer.h"
 #include "char_packet_router.h"
 //#include <HardwareSerial.h>
+#include <WiFi.h>
+#include <WiFiClient.h> 
  
 #include "emit_tones.h"
  
@@ -39,6 +41,17 @@ static bool message_sent = false;
 
 bool hotspot_mode = false;
 
+// Blynk
+ //Blynk Data
+ #define BLYNK_AUTH            "RonJtq8yYARwRVRVgrYYurO-UzhyENr8"
+ #define BLYNK_TEMPLATE_ID     "TMPL4tHCnjG_H"
+ #define BLYNK_TEMPLATE_NAME   "AUSP"
+ #include <BlynkSimpleEsp32.h>
+
+
+// WiFi
+const char WIFI_SSID[] PROGMEM  = "CasaMaggi";
+const char WIFI_PASS[]  PROGMEM = "alessiamaggi1971";
 
 static void wait_for_next_decasecond() {
     const uint32_t SLOT_MS = 10000;
@@ -91,6 +104,8 @@ static void process_ready_packets(){
  int algorithm = 2;
  int g_scrolling = 0;
  int g_scroll_offset = 0;
+
+
  
  /*! \fn void decoder_operations(void)
  * \brief Esegue tutte le operazioni di decodifica
@@ -132,6 +147,7 @@ void setup() {
         printf(" ______________________\n");
         printf("| HotSpot mode enabled |\n");
         printf("\\______________________|\n");
+        Blynk.begin(BLYNK_AUTH, WIFI_SSID, WIFI_PASS);
     }
      /*Inizializzazione audio driver I2S*/
      audio_init();
@@ -158,6 +174,9 @@ void setup() {
     }
 
     char_packet_router_init();
+    Blynk.virtualWrite(V1, "_____________________\n");
+    Blynk.virtualWrite(V1, "| HotSpot Device ON |\n");
+    Blynk.virtualWrite(V1, "\\___________________|\n");
 }
  
  /*! \fn void loop(void)
@@ -171,7 +190,16 @@ void loop() {
     if(data_ready) {
         decoder_operations();
         process_ready_packets();
+        if(hotspot_mode) {
+            Blynk.run();
+        }
         data_ready = 0;
     }
 
+}
+
+
+BLYNK_WRITE(V1) {
+    String input = param.asStr();       // prendo il testo inviato dal Terminal widget
+    printf("Ricevuto da Blynk V0: %s\n", input.c_str());  // stampo via printf su Serial
 }

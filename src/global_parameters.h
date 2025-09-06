@@ -32,8 +32,8 @@
 
 //AUSP frequencies Pattern
 #define MASTER_BASE 1000
-#define SLAVE_BASE 20000
-#define CONFIG_BASE 40000
+#define SLAVE_BASE 8600
+#define CONFIG_BASE 16200
 #define TONE_STEP 400
 #define ROW_LEN      19
 
@@ -50,6 +50,7 @@
 #define I2S_MIC_SD_PIN  35  // DOUT
 //Pin HotSpot mode
 #define HOTSPOT_PIN     34    // Pin to enable HotSpot mode (HIGH = HotSpot mode enabled)
+
 
 
 typedef struct struct_out_tones {
