@@ -53,7 +53,7 @@ int ausp_freq[] = {
         SLAVE_BASE + (16 * TONE_STEP), SLAVE_BASE + (17 * TONE_STEP),
         SLAVE_BASE + (18 * TONE_STEP),
     
-        // Terza riga: CONFIG_BASE
+        // Terza riga: CONFIG usa le stesse frequenze del master ma con portante a 8600 Hz
         CONFIG_BASE + (0  * TONE_STEP), CONFIG_BASE + (1  * TONE_STEP),
         CONFIG_BASE + (2  * TONE_STEP), CONFIG_BASE + (3  * TONE_STEP),
         CONFIG_BASE + (4  * TONE_STEP), CONFIG_BASE + (5  * TONE_STEP),
@@ -63,7 +63,7 @@ int ausp_freq[] = {
         CONFIG_BASE + (12 * TONE_STEP), CONFIG_BASE + (13 * TONE_STEP),
         CONFIG_BASE + (14 * TONE_STEP), CONFIG_BASE + (15 * TONE_STEP),
         CONFIG_BASE + (16 * TONE_STEP), CONFIG_BASE + (17 * TONE_STEP),
-        CONFIG_BASE + (18 * TONE_STEP)
+        CONFIG_CARRIER
     };
     
 double const freq_tolerance = (double)G_SAMPLE_RATE/(double)G_ARRAY_SIZE; /* Frequency tolerance due to FFT resolution */
