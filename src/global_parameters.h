@@ -32,9 +32,9 @@
 
 //AUSP frequencies Pattern
 #define MASTER_BASE 1000
-#define SLAVE_BASE 8600
-#define CONFIG_BASE 16200
-#define TONE_STEP 400
+#define SLAVE_BASE 3850
+#define CONFIG_BASE 6700
+#define TONE_STEP 150
 #define ROW_LEN      19
 
 //MAP PINS
@@ -86,4 +86,4 @@ typedef struct amplitude_profile {
 
 
 
-#endif
+#endif // GLOBAL_PARAMETERS_H_
