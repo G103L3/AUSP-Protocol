@@ -40,26 +40,26 @@ int interpret_bits(int freqs[3])
         if (active[0] && active[1] && !active[2]){ 
             //Frequenza appartenente agli 0, si valuta quanti 0 di seguito
             turn_green(1); 
-            if(freqs[0] <= MASTER_BASE + (TONE_STEP*19)){
+            if(freqs[0] < MASTER_BASE + (TONE_STEP*19)){
                 return (freqs[0]-MASTER_BASE)/(TONE_STEP);
             }
-            if(freqs[0] <= SLAVE_BASE + (TONE_STEP*19)){
+            if(freqs[0] < SLAVE_BASE + (TONE_STEP*19)){
                 return (freqs[0]-SLAVE_BASE)/(TONE_STEP);
             }
-            if(freqs[0] <= CONFIG_BASE + (TONE_STEP*19)){
+            if(freqs[0] < CONFIG_BASE + (TONE_STEP*19)){
                 return (freqs[0]-CONFIG_BASE)/(TONE_STEP);
             }
         } 
         if (!active[0] && active[1] && active[2]){ 
             //Frequenza ppartenente agli 1, si valuta quanti 1 di seguito
             turn_green(1);  
-            if(freqs[2] <= MASTER_BASE + (TONE_STEP*19)){
+            if(freqs[2] < MASTER_BASE + (TONE_STEP*19)){
                 return (freqs[2]-MASTER_BASE)/(TONE_STEP);
             }
-            if(freqs[2] <= SLAVE_BASE + (TONE_STEP*19)){
+            if(freqs[2] < SLAVE_BASE + (TONE_STEP*19)){
                 return (freqs[2]-SLAVE_BASE)/(TONE_STEP);
             }
-            if(freqs[2] <= CONFIG_BASE + (TONE_STEP*19)){
+            if(freqs[2] < CONFIG_BASE + (TONE_STEP*19)){
                 return (freqs[2]-CONFIG_BASE)/(TONE_STEP);
             }
         }
@@ -110,14 +110,14 @@ struct_out_tones frequency_coder(int bit, int role){
     // 0 = un 0; 1 = due 0; 2 = tre 0; 3 = quattro 0; 4 = cinque 0; 5 = sei 0; 6 = sette 0; 7 = 14 0; 8 = 21 0
     //10 = un 1; 11 = due 1; 12 = tre 1; 13 = quattro 1; 14 = cinque 1; 15 = sei 1; 16 = sette 1; 17 = 14 1; 18 = 21 1
     if (role == 0) { // Master
-        out_tones.tones[0] = MASTER_BASE + (bit * TONE_STEP); //Frequenza di segnale per il master
-        out_tones.tones[1] = MASTER_BASE + (TONE_STEP * 18); //3200 è la frequenza portante per il master
+        out_tones.tones[0] = MASTER_BASE + (bit * TONE_STEP); // Frequenza di segnale per il master
+        out_tones.tones[1] = MASTER_BASE + (TONE_STEP * 18); // 8200 Hz portante master
     } else if (role == 1) { // Slave
-        out_tones.tones[0] = SLAVE_BASE + (bit * TONE_STEP); //Frequenza di segnale per lo slave
-        out_tones.tones[1] = SLAVE_BASE + (TONE_STEP * 18); //6200 è la frequenza portante per lo slave
+        out_tones.tones[0] = SLAVE_BASE + (bit * TONE_STEP); // Frequenza di segnale per lo slave
+        out_tones.tones[1] = SLAVE_BASE + (TONE_STEP * 18); // 12000 Hz portante slave
     } else if (role== 2) { // Configuration
-        out_tones.tones[0] = CONFIG_BASE + (bit * TONE_STEP); //Frequenza di segnale per il config
-        out_tones.tones[1] = CONFIG_BASE + (TONE_STEP * 18); //9200 è la frequenza portante per il config
+        out_tones.tones[0] = CONFIG_BASE + (bit * TONE_STEP); // Frequenza di segnale per il config
+        out_tones.tones[1] = CONFIG_CARRIER; // 700 Hz portante config
     }
 
     return out_tones;
