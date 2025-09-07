@@ -10,8 +10,8 @@ typedef enum {
     CMD_REQ,
     CMD_SET,
     CMD_OK,
-    CMD_TKN,
     CMD_MOVEMENT,
+    CMD_ABORT,
     CMD_EXT
 } Command;
 
