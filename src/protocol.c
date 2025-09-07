@@ -38,7 +38,7 @@ static unsigned long retry_at = 0;
 
 static ProtocolMessageCallback msg_cb = NULL;
 
-#define RETRY_MS 5000UL
+#define RETRY_MS 20000
 
 static void log_recv(const char *msg){
     if(hotspot && msg_cb){
@@ -153,6 +153,10 @@ static void handle_ok(const char *src){
         if(awaiting_ack && strcmp(src, pending_dest) == 0){
             awaiting_ack = false;
             pending_dest[0] = '\0';
+            char buffer[128];
+            snprintf(buffer, sizeof(buffer),
+                     "Nuovo dispositivo registrato con successo, ID: %s", src);
+            log_send(buffer);
         }
     }
 }
