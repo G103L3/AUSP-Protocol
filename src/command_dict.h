@@ -11,6 +11,7 @@ typedef enum {
     CMD_SET,
     CMD_OK,
     CMD_TKN,
+    CMD_MOVEMENT,
     CMD_EXT
 } Command;
 

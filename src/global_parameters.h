@@ -51,7 +51,8 @@
 #define I2S_MIC_SD_PIN  35  // DOUT
 //Pin HotSpot mode
 #define HOTSPOT_PIN     34    // Pin to enable HotSpot mode (HIGH = HotSpot mode enabled)
-
+//Pin Sensors 
+#define PIR_PIN         39    // Pin for PIR motion sensor
 
 
 typedef struct struct_out_tones {
