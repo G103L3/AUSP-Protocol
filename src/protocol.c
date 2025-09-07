@@ -2,6 +2,7 @@
 #include "command_dict.h"
 #include "bit_output_packer.h"
 #include "emit_tones.h"
+#include "movement_sensor.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -32,8 +33,11 @@ static size_t known_count = 0;
 
 static char pending_cmd[64];
 static char pending_dest[5];
-static bool pending_is_config = false;
+typedef enum { PEND_NONE, PEND_CONFIG, PEND_MASTER, PEND_SLAVE } PendingType;
+static PendingType pending_type = PEND_NONE;
 static bool awaiting_ack = false;
+static bool awaiting_response = false;
+static unsigned long retry_interval = RETRY_MS;
 static unsigned long retry_at = 0;
 
 static ProtocolMessageCallback msg_cb = NULL;
@@ -113,9 +117,11 @@ static void assign_new_id(const char *pid){
     strncpy(pending_cmd, resp, sizeof(pending_cmd)-1);
     pending_cmd[sizeof(pending_cmd)-1] = '\0';
     strncpy(pending_dest, new_id, sizeof(pending_dest));
-    pending_is_config = true;
+    pending_type = PEND_CONFIG;
     awaiting_ack = true;
-    retry_at = now_ms() + RETRY_MS;
+    awaiting_response = false;
+    retry_interval = RETRY_MS;
+    retry_at = now_ms() + retry_interval;
 }
 
 void protocol_init(bool is_hotspot){
@@ -152,11 +158,21 @@ static void handle_ok(const char *src){
         register_device(src);
         if(awaiting_ack && strcmp(src, pending_dest) == 0){
             awaiting_ack = false;
+            PendingType prev = pending_type;
             pending_dest[0] = '\0';
-            char buffer[128];
-            snprintf(buffer, sizeof(buffer),
-                     "Nuovo dispositivo registrato con successo, ID: %s", src);
-            log_send(buffer);
+            if(!awaiting_response) pending_type = PEND_NONE;
+            if(prev == PEND_CONFIG){
+                char buffer[128];
+                snprintf(buffer, sizeof(buffer),
+                         "Nuovo dispositivo registrato con successo, ID: %s", src);
+                log_send(buffer);
+            }
+        }
+    } else {
+        if(awaiting_ack && strcmp(src, pending_dest) == 0){
+            awaiting_ack = false;
+            pending_type = PEND_NONE;
+            pending_dest[0] = '\0';
         }
     }
 }
@@ -191,14 +207,26 @@ void protocol_tick(void){
     if(token_active && now > token_expiry){
         token_active = false;
     }
-    if(hotspot && awaiting_ack && now > retry_at){
-        if(pending_is_config){
-            send_config(pending_cmd);
-        } else {
-            send_master(pending_cmd);
-            protocol_grant_token(pending_dest, 20);
+    if(awaiting_ack && now > retry_at){
+        switch(pending_type){
+            case PEND_CONFIG:
+                send_config(pending_cmd);
+                break;
+            case PEND_MASTER:
+                send_master(pending_cmd);
+                if(hotspot) protocol_grant_token(pending_dest, 20);
+                break;
+            case PEND_SLAVE:
+                send_slave(pending_cmd);
+                break;
+            default:
+                break;
         }
-        retry_at = now + RETRY_MS;
+        retry_at = now + retry_interval;
+    } else if(awaiting_response && now > retry_at){
+        send_master(pending_cmd);
+        if(hotspot) protocol_grant_token(pending_dest, 20);
+        retry_at = now + retry_interval;
     }
 }
 
@@ -279,9 +307,53 @@ void protocol_handle_message(ChannelType ch, const char *msg){
         strncpy(dest, dest_start, dest_len);
         dest[dest_len] = '\0';
         if(strcmp(dest, my_id) != 0) return;
-        char ack[64];
-        snprintf(ack, sizeof(ack), "ID:0000{OK}z{%s}", my_id);
-        send_slave(ack);
+
+        const char *op_start = strchr(msg, '{');
+        const char *op_end = strchr(op_start ? op_start+1 : msg, '}');
+        if(!op_start || !op_end) return;
+
+        char op_buf[32];
+        size_t op_len = (size_t)(op_end - op_start - 1);
+        if(op_len >= sizeof(op_buf)) op_len = sizeof(op_buf)-1;
+        strncpy(op_buf, op_start+1, op_len);
+        op_buf[op_len] = '\0';
+
+        const char *src_start = strchr(op_end+1, '{');
+        const char *src_end = src_start ? strchr(src_start+1, '}') : NULL;
+        char src[5] = {0};
+        if(src_start){
+            size_t src_len;
+            if(src_end){
+                src_len = (size_t)(src_end - src_start -1);
+            } else {
+                src_len = strlen(src_start+1);
+            }
+            if(src_len >= sizeof(src)) src_len = sizeof(src)-1;
+            strncpy(src, src_start+1, src_len);
+            src[src_len] = '\0';
+        }
+
+        char *colon = strchr(op_buf, ':');
+        char value[32] = {0};
+        if(colon){
+            *colon = '\0';
+            strncpy(value, colon+1, sizeof(value)-1);
+        }
+
+        Command cmd = command_from_string(op_buf);
+        if(cmd == CMD_OK){
+            handle_ok(src);
+            return;
+        }
+
+        if(cmd == CMD_MOVEMENT){
+            unsigned long dur = 5000;
+            if(strncmp(value, "ON_", 3) == 0){
+                dur = strtoul(value+3, NULL, 10);
+            }
+            bool detected = movement_sensor_detect(dur);
+            protocol_send_response(detected ? "MOVEMENT:YES" : "MOVEMENT:NO");
+        }
         return;
     }
 
@@ -303,6 +375,12 @@ void protocol_handle_message(ChannelType ch, const char *msg){
         if(op_len >= sizeof(op_buf)) op_len = sizeof(op_buf)-1;
         strncpy(op_buf, op_start+1, op_len);
         op_buf[op_len] = '\0';
+        char *colon = strchr(op_buf, ':');
+        char value[32] = {0};
+        if(colon){
+            *colon = '\0';
+            strncpy(value, colon+1, sizeof(value)-1);
+        }
         const char *src_start = strchr(op_end+1, '{');
         const char *src_end = src_start ? strchr(src_start+1, '}') : NULL;
         char src[5] = {0};
@@ -320,6 +398,23 @@ void protocol_handle_message(ChannelType ch, const char *msg){
         Command cmd = command_from_string(op_buf);
         if(cmd == CMD_OK){
             handle_ok(src);
+            return;
+        }
+        if(cmd == CMD_MOVEMENT){
+            char ack[64];
+            snprintf(ack, sizeof(ack), "ID:%s{OK}z{0000}", src);
+            send_master(ack);
+            if(awaiting_response && strcmp(src, pending_dest) == 0){
+                awaiting_response = false;
+                pending_type = PEND_NONE;
+                pending_dest[0] = '\0';
+            }
+            if(msg_cb){
+                char buf[128];
+                snprintf(buf, sizeof(buf), "Risposta movimento da %s: %s\n", src, value);
+                msg_cb(buf);
+            }
+            return;
         }
         return;
     }
@@ -330,11 +425,46 @@ void protocol_send_command(const char *dest_id, const char *operation){
     snprintf(pending_cmd, sizeof(pending_cmd), "ID:%s{%s}k{0000}", dest_id, operation);
     strncpy(pending_dest, dest_id, sizeof(pending_dest));
     pending_dest[4] = '\0';
-    pending_is_config = false;
+    pending_type = PEND_MASTER;
     awaiting_ack = true;
+    awaiting_response = false;
+    retry_interval = RETRY_MS;
     send_master(pending_cmd);
     protocol_grant_token(dest_id, 20);
-    retry_at = now_ms() + RETRY_MS;
+    retry_at = now_ms() + retry_interval;
+}
+
+void protocol_send_movement_request(const char *dest_id, unsigned long duration_ms){
+    if(!hotspot) return;
+    char op[32];
+    if(duration_ms == 0 || duration_ms == 5000){
+        snprintf(op, sizeof(op), "MOVEMENT:ON");
+        duration_ms = 5000;
+    } else {
+        snprintf(op, sizeof(op), "MOVEMENT:ON_%lu", duration_ms);
+    }
+    snprintf(pending_cmd, sizeof(pending_cmd), "ID:%s{%s}k{0000}", dest_id, op);
+    strncpy(pending_dest, dest_id, sizeof(pending_dest));
+    pending_dest[4] = '\0';
+    pending_type = PEND_MASTER;
+    awaiting_ack = false;
+    awaiting_response = true;
+    retry_interval = duration_ms + RETRY_MS;
+    send_master(pending_cmd);
+    protocol_grant_token(dest_id, 20);
+    retry_at = now_ms() + retry_interval;
+}
+
+void protocol_send_response(const char *operation){
+    if(hotspot) return;
+    snprintf(pending_cmd, sizeof(pending_cmd), "ID:0000{%s}k{%s}", operation, my_id);
+    strncpy(pending_dest, "0000", sizeof(pending_dest));
+    pending_type = PEND_SLAVE;
+    awaiting_ack = true;
+    awaiting_response = false;
+    retry_interval = RETRY_MS;
+    send_slave(pending_cmd);
+    retry_at = now_ms() + retry_interval;
 }
 
 void protocol_list_devices(char *buf, size_t buflen){
