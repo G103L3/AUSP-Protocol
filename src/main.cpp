@@ -203,6 +203,10 @@ BLYNK_WRITE(V1) {
         Blynk.virtualWrite(V1, list);
         return;
     }
+    if(input.equalsIgnoreCase("ABORT")) {
+        protocol_send_abort();
+        return;
+    }
     int arrow = input.indexOf("->");
     if(arrow > 0){
         String op = input.substring(0, arrow);
