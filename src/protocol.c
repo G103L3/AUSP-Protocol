@@ -250,8 +250,9 @@ void protocol_handle_message(ChannelType ch, const char *msg){
         dest[dest_len] = '\0';
 
         const char *op_start = strchr(msg, '{');
-        const char *op_end = strchr(op_start ? op_start+1 : msg, '}');
-        if(!op_start || !op_end) return;
+        const char *op_end = op_start ? strchr(op_start+1, '}') : NULL;
+        if(!op_start) return;
+        if(!op_end) op_end = msg + strlen(msg);
 
         char op_buf[32];
         size_t op_len = (size_t)(op_end - op_start - 1);
@@ -303,8 +304,9 @@ void protocol_handle_message(ChannelType ch, const char *msg){
         if(strcmp(dest, my_id) != 0) return;
 
         const char *op_start = strchr(msg, '{');
-        const char *op_end = strchr(op_start ? op_start+1 : msg, '}');
-        if(!op_start || !op_end) return;
+        const char *op_end = op_start ? strchr(op_start+1, '}') : NULL;
+        if(!op_start) return;
+        if(!op_end) op_end = msg + strlen(msg);
 
         char op_buf[32];
         size_t op_len = (size_t)(op_end - op_start - 1);
@@ -362,8 +364,9 @@ void protocol_handle_message(ChannelType ch, const char *msg){
         dest[dest_len] = '\0';
         if(strcmp(dest, "0000") != 0) return;
         const char *op_start = strchr(msg, '{');
-        const char *op_end = strchr(op_start ? op_start+1 : msg, '}');
-        if(!op_start || !op_end) return;
+        const char *op_end = op_start ? strchr(op_start+1, '}') : NULL;
+        if(!op_start) return;
+        if(!op_end) op_end = msg + strlen(msg);
         char op_buf[32];
         size_t op_len = (size_t)(op_end - op_start - 1);
         if(op_len >= sizeof(op_buf)) op_len = sizeof(op_buf)-1;
