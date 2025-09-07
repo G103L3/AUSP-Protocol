@@ -7,17 +7,9 @@
 #include <string.h>
 #include <stdlib.h>
 
-#ifdef ARDUINO
-#include <Arduino.h>
+
 static unsigned long now_ms(void){ return millis(); }
-#else
-#include <time.h>
-static unsigned long now_ms(void){
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (unsigned long)ts.tv_sec * 1000UL + (unsigned long)(ts.tv_nsec/1000000UL);
-}
-#endif
+
 
 static bool hotspot = false;
 static char my_id[5] = "0000";
@@ -28,6 +20,9 @@ static bool token_active = false;
 static unsigned long token_expiry = 0;
 
 #define MAX_DEVICES 16
+#define RETRY_MS 20000
+
+
 static char known_ids[MAX_DEVICES][5];
 static size_t known_count = 0;
 
@@ -42,7 +37,6 @@ static unsigned long retry_at = 0;
 
 static ProtocolMessageCallback msg_cb = NULL;
 
-#define RETRY_MS 20000
 
 static void log_recv(const char *msg){
     if(hotspot && msg_cb){
