@@ -53,8 +53,8 @@ bool hotspot_mode = false;
 
 
 // WiFi
-const char WIFI_SSID[] PROGMEM  = "CasaMaggi";
-const char WIFI_PASS[]  PROGMEM = "alessiamaggi1971";
+const char WIFI_SSID[] PROGMEM  = "iPhone di Gioele";
+const char WIFI_PASS[]  PROGMEM = "nf130900$";
 
 static void blynk_print(const char *msg){
     Blynk.virtualWrite(V1, msg);
