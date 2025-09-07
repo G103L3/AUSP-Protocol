@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <Arduino.h>
 
 
 static unsigned long now_ms(void){ return millis(); }
@@ -16,8 +17,6 @@ static char my_id[5] = "0000";
 static char provisional_id[4] = "";
 static unsigned int id_counter = 1;
 
-static bool token_active = false;
-static unsigned long token_expiry = 0;
 
 #define MAX_DEVICES 16
 #define RETRY_MS 20000
@@ -171,44 +170,17 @@ static void handle_ok(const char *src){
     }
 }
 
-static void handle_token(const char *dest, const char *value){
-    if(!hotspot && strcmp(dest, my_id)==0){
-        unsigned int sec = (unsigned int)strtoul(value,NULL,10);
-        token_active = true;
-        token_expiry = now_ms() + sec*1000UL;
-    }
-}
-
-void protocol_grant_token(const char *dest_id, unsigned int seconds){
-    if(!hotspot) return;
-    char msg[64];
-    snprintf(msg, sizeof(msg), "ID:%s{TKN:%u}k{0000}", dest_id, seconds);
-    send_config(msg);
-}
-
-bool protocol_can_send(void){
-    if(hotspot) return true;
-    if(!token_active) return false;
-    if(now_ms() > token_expiry){
-        token_active = false;
-        return false;
-    }
-    return true;
-}
 
 void protocol_tick(void){
     unsigned long now = now_ms();
-    if(token_active && now > token_expiry){
-        token_active = false;
-    }
     if(awaiting_ack && now > retry_at){
+        retry_at = now + retry_interval;
         switch(pending_type){
             case PEND_CONFIG:
                 send_config(pending_cmd);
                 break;
             case PEND_MASTER:
                 send_master(pending_cmd);
-                if(hotspot) protocol_grant_token(pending_dest, 20);
                 break;
             case PEND_SLAVE:
                 send_slave(pending_cmd);
@@ -216,11 +188,9 @@ void protocol_tick(void){
             default:
                 break;
         }
-        retry_at = now + retry_interval;
     } else if(awaiting_response && now > retry_at){
-        send_master(pending_cmd);
-        if(hotspot) protocol_grant_token(pending_dest, 20);
         retry_at = now + retry_interval;
+        send_master(pending_cmd);
     }
 }
 
@@ -250,8 +220,9 @@ void protocol_handle_message(ChannelType ch, const char *msg){
         dest[dest_len] = '\0';
 
         const char *op_start = strchr(msg, '{');
-        const char *op_end = strchr(op_start ? op_start+1 : msg, '}');
-        if(!op_start || !op_end) return;
+        const char *op_end = op_start ? strchr(op_start+1, '}') : NULL;
+        if(!op_start) return;
+        if(!op_end) op_end = msg + strlen(msg);
 
         char op_buf[32];
         size_t op_len = (size_t)(op_end - op_start - 1);
@@ -285,7 +256,6 @@ void protocol_handle_message(ChannelType ch, const char *msg){
         switch(cmd){
             case CMD_SET: handle_set(dest, value); break;
             case CMD_OK:  handle_ok(src); break;
-            case CMD_TKN: handle_token(dest, value); break;
             default: break;
         }
         return;
@@ -300,11 +270,13 @@ void protocol_handle_message(ChannelType ch, const char *msg){
         if(dest_len >= sizeof(dest)) dest_len = sizeof(dest)-1;
         strncpy(dest, dest_start, dest_len);
         dest[dest_len] = '\0';
-        if(strcmp(dest, my_id) != 0) return;
+        bool broadcast = (strcmp(dest, "1111") == 0);
+        if(strcmp(dest, my_id) != 0 && !broadcast) return;
 
         const char *op_start = strchr(msg, '{');
-        const char *op_end = strchr(op_start ? op_start+1 : msg, '}');
-        if(!op_start || !op_end) return;
+        const char *op_end = op_start ? strchr(op_start+1, '}') : NULL;
+        if(!op_start) return;
+        if(!op_end) op_end = msg + strlen(msg);
 
         char op_buf[32];
         size_t op_len = (size_t)(op_end - op_start - 1);
@@ -340,13 +312,27 @@ void protocol_handle_message(ChannelType ch, const char *msg){
             return;
         }
 
+        if(cmd == CMD_ABORT){
+            printf("[Debug] Abort command received from %s\n", src);
+            movement_sensor_abort();
+            return;
+        }
+
         if(cmd == CMD_MOVEMENT){
+            printf("[Debug] Movement request from %s value %s\n", src, value);
             unsigned long dur = 5000;
             if(strncmp(value, "ON_", 3) == 0){
                 dur = strtoul(value+3, NULL, 10);
             }
+            printf("[Debug] Starting movement detection for %lu ms\n", dur);
             bool detected = movement_sensor_detect(dur);
+            if(movement_sensor_aborted()){
+                printf("[Debug] Movement detection aborted\n");
+                return;
+            }
+            printf("[Debug] Movement detection result: %s\n", detected ? "YES" : "NO");
             protocol_send_response(detected ? "MOVEMENT:YES" : "MOVEMENT:NO");
+            printf("[Debug] Movement response sent\n");
         }
         return;
     }
@@ -362,8 +348,9 @@ void protocol_handle_message(ChannelType ch, const char *msg){
         dest[dest_len] = '\0';
         if(strcmp(dest, "0000") != 0) return;
         const char *op_start = strchr(msg, '{');
-        const char *op_end = strchr(op_start ? op_start+1 : msg, '}');
-        if(!op_start || !op_end) return;
+        const char *op_end = op_start ? strchr(op_start+1, '}') : NULL;
+        if(!op_start) return;
+        if(!op_end) op_end = msg + strlen(msg);
         char op_buf[32];
         size_t op_len = (size_t)(op_end - op_start - 1);
         if(op_len >= sizeof(op_buf)) op_len = sizeof(op_buf)-1;
@@ -424,7 +411,6 @@ void protocol_send_command(const char *dest_id, const char *operation){
     awaiting_response = false;
     retry_interval = RETRY_MS;
     send_master(pending_cmd);
-    protocol_grant_token(dest_id, 20);
     retry_at = now_ms() + retry_interval;
 }
 
@@ -445,7 +431,6 @@ void protocol_send_movement_request(const char *dest_id, unsigned long duration_
     awaiting_response = true;
     retry_interval = duration_ms + RETRY_MS;
     send_master(pending_cmd);
-    protocol_grant_token(dest_id, 20);
     retry_at = now_ms() + retry_interval;
 }
 
@@ -459,6 +444,15 @@ void protocol_send_response(const char *operation){
     retry_interval = RETRY_MS;
     send_slave(pending_cmd);
     retry_at = now_ms() + retry_interval;
+}
+
+void protocol_send_abort(void){
+    if(!hotspot) return;
+    char msg[64];
+    snprintf(msg, sizeof(msg), "ID:1111{ABORT}k{0000}");
+    send_master(msg);
+    delay(50);
+    send_master(msg);
 }
 
 void protocol_list_devices(char *buf, size_t buflen){

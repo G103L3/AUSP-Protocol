@@ -12,6 +12,8 @@ extern "C" {
 
 void movement_sensor_init(void);
 bool movement_sensor_detect(unsigned long duration_ms);
+void movement_sensor_abort(void);
+bool movement_sensor_aborted(void);
 
 #ifdef __cplusplus
 }
