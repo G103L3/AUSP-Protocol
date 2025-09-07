@@ -25,6 +25,7 @@
 #include "bit_output_packer.h"
 #include "char_packet_router.h"
 #include "protocol.h"
+#include "movement_sensor.h"
 #include "command_dict.h"
 //#include <HardwareSerial.h>
 #include <WiFi.h>
@@ -166,6 +167,7 @@ void setup() {
 
     char_packet_router_init();
     protocol_init(hotspot_mode);
+    movement_sensor_init();
     protocol_set_message_callback(blynk_print);
     Blynk.virtualWrite(V1, "_____________________\n");
     Blynk.virtualWrite(V1, "| HotSpot Device ON |\n");
@@ -205,7 +207,14 @@ BLYNK_WRITE(V1) {
     if(arrow > 0){
         String op = input.substring(0, arrow);
         String dest = input.substring(arrow+2);
-        if(command_from_string(op.c_str()) != CMD_UNKNOWN){
+        if(op.startsWith("movement_sensor_on")){
+            unsigned long dur = 5000;
+            int idx = op.lastIndexOf('_');
+            if(idx > String("movement_sensor_on").length()){
+                dur = op.substring(idx+1).toInt();
+            }
+            protocol_send_movement_request(dest.c_str(), dur);
+        } else if(command_from_string(op.c_str()) != CMD_UNKNOWN){
             protocol_send_command(dest.c_str(), op.c_str());
         }
     }
