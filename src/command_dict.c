@@ -10,8 +10,8 @@ static const CmdEntry dict[] = {
     {"REQ", CMD_REQ},
     {"SET", CMD_SET},
     {"OK",  CMD_OK},
-    {"TKN", CMD_TKN},
     {"MOVEMENT", CMD_MOVEMENT},
+    {"ABORT", CMD_ABORT},
     {"EXT", CMD_EXT},
     {NULL,   CMD_UNKNOWN}
 };
