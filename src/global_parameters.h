@@ -32,8 +32,9 @@
 
 //AUSP frequencies pattern (adjusted for 400 Hz tone spacing)
 #define MASTER_BASE 1000
-#define SLAVE_BASE 4800
+#define SLAVE_BASE MASTER_BASE
 #define CONFIG_BASE MASTER_BASE
+#define SLAVE_CARRIER 9000
 #define CONFIG_CARRIER 8600
 #define TONE_STEP 400
 #define ROW_LEN      19

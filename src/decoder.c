@@ -41,7 +41,7 @@ int ausp_freq[] = {
         MASTER_BASE + (16 * TONE_STEP), MASTER_BASE + (17 * TONE_STEP),
         MASTER_BASE + (18 * TONE_STEP),
     
-        // Seconda riga: SLAVE_BASE
+        // Seconda riga: SLAVE usa le stesse frequenze del master con portante a 9000 Hz
         SLAVE_BASE + (0  * TONE_STEP), SLAVE_BASE + (1  * TONE_STEP),
         SLAVE_BASE + (2  * TONE_STEP), SLAVE_BASE + (3  * TONE_STEP),
         SLAVE_BASE + (4  * TONE_STEP), SLAVE_BASE + (5  * TONE_STEP),
@@ -51,7 +51,7 @@ int ausp_freq[] = {
         SLAVE_BASE + (12 * TONE_STEP), SLAVE_BASE + (13 * TONE_STEP),
         SLAVE_BASE + (14 * TONE_STEP), SLAVE_BASE + (15 * TONE_STEP),
         SLAVE_BASE + (16 * TONE_STEP), SLAVE_BASE + (17 * TONE_STEP),
-        SLAVE_BASE + (18 * TONE_STEP),
+        SLAVE_CARRIER,
     
         // Terza riga: CONFIG usa le stesse frequenze del master ma con portante a 8600 Hz
         CONFIG_BASE + (0  * TONE_STEP), CONFIG_BASE + (1  * TONE_STEP),
