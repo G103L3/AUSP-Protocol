@@ -53,40 +53,61 @@ static void log_send(const char *msg){
     }
 }
 
-static void send_master(const char *msg){
+static unsigned long estimate_send_duration(const BitOutputPacker *packer){
+    unsigned long ms = 0;
+    for(size_t i = 0; i < packer->pair_count; ++i){
+        if(packer->pairs[i].tones[0] == 0 && packer->pairs[i].tones[1] == 0){
+            ms += 80;
+        } else {
+            ms += 24;
+        }
+    }
+    return ms;
+}
+
+static unsigned long send_master(const char *msg){
     log_send(msg);
     BitOutputPacker packer;
     bit_output_packer_init(&packer);
+    unsigned long duration = 0;
     if(bit_output_packer_compress(&packer, msg)){
         if(bit_output_packer_convert(&packer, 0)){
+            duration = estimate_send_duration(&packer);
             emit_tones(packer.pairs, packer.pair_count);
         }
     }
     bit_output_packer_free(&packer);
+    return duration;
 }
 
-static void send_slave(const char *msg){
+static unsigned long send_slave(const char *msg){
     log_send(msg);
     BitOutputPacker packer;
     bit_output_packer_init(&packer);
+    unsigned long duration = 0;
     if(bit_output_packer_compress(&packer, msg)){
         if(bit_output_packer_convert(&packer, 1)){
+            duration = estimate_send_duration(&packer);
             emit_tones(packer.pairs, packer.pair_count);
         }
     }
     bit_output_packer_free(&packer);
+    return duration;
 }
 
-static void send_config(const char *msg){
+static unsigned long send_config(const char *msg){
     log_send(msg);
     BitOutputPacker packer;
     bit_output_packer_init(&packer);
+    unsigned long duration = 0;
     if(bit_output_packer_compress(&packer, msg)){
         if(bit_output_packer_convert(&packer, 2)){
+            duration = estimate_send_duration(&packer);
             emit_tones(packer.pairs, packer.pair_count);
         }
     }
     bit_output_packer_free(&packer);
+    return duration;
 }
 
 static void register_device(const char *id){
@@ -106,14 +127,14 @@ static void assign_new_id(const char *pid){
     snprintf(new_id, sizeof(new_id), "%04X", id_counter++ & 0xFFFF);
     char resp[64];
     snprintf(resp, sizeof(resp), "ID:%s{SET:%s}k{0000}", pid, new_id);
-    send_config(resp);
+    unsigned long dur = send_config(resp);
     strncpy(pending_cmd, resp, sizeof(pending_cmd)-1);
     pending_cmd[sizeof(pending_cmd)-1] = '\0';
     strncpy(pending_dest, new_id, sizeof(pending_dest));
     pending_type = PEND_CONFIG;
     awaiting_ack = true;
     awaiting_response = false;
-    retry_interval = RETRY_MS;
+    retry_interval = dur + RETRY_MS;
     retry_at = now_ms() + retry_interval;
 }
 
@@ -174,23 +195,26 @@ static void handle_ok(const char *src){
 void protocol_tick(void){
     unsigned long now = now_ms();
     if(awaiting_ack && now > retry_at){
-        retry_at = now + retry_interval;
+        unsigned long dur = 0;
         switch(pending_type){
             case PEND_CONFIG:
-                send_config(pending_cmd);
+                dur = send_config(pending_cmd);
                 break;
             case PEND_MASTER:
-                send_master(pending_cmd);
+                dur = send_master(pending_cmd);
                 break;
             case PEND_SLAVE:
-                send_slave(pending_cmd);
+                dur = send_slave(pending_cmd);
                 break;
             default:
                 break;
         }
-    } else if(awaiting_response && now > retry_at){
+        retry_interval = dur + RETRY_MS;
         retry_at = now + retry_interval;
-        send_master(pending_cmd);
+    } else if(awaiting_response && now > retry_at){
+        unsigned long dur = send_master(pending_cmd);
+        retry_interval = dur + RETRY_MS;
+        retry_at = now + retry_interval;
     }
 }
 
@@ -409,8 +433,8 @@ void protocol_send_command(const char *dest_id, const char *operation){
     pending_type = PEND_MASTER;
     awaiting_ack = true;
     awaiting_response = false;
-    retry_interval = RETRY_MS;
-    send_master(pending_cmd);
+    unsigned long dur = send_master(pending_cmd);
+    retry_interval = dur + RETRY_MS;
     retry_at = now_ms() + retry_interval;
 }
 
@@ -429,8 +453,8 @@ void protocol_send_movement_request(const char *dest_id, unsigned long duration_
     pending_type = PEND_MASTER;
     awaiting_ack = false;
     awaiting_response = true;
-    retry_interval = duration_ms + RETRY_MS;
-    send_master(pending_cmd);
+    unsigned long dur = send_master(pending_cmd);
+    retry_interval = duration_ms + dur + RETRY_MS;
     retry_at = now_ms() + retry_interval;
 }
 
@@ -441,8 +465,8 @@ void protocol_send_response(const char *operation){
     pending_type = PEND_SLAVE;
     awaiting_ack = true;
     awaiting_response = false;
-    retry_interval = RETRY_MS;
-    send_slave(pending_cmd);
+    unsigned long dur = send_slave(pending_cmd);
+    retry_interval = dur + RETRY_MS;
     retry_at = now_ms() + retry_interval;
 }
 

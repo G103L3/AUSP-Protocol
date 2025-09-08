@@ -197,29 +197,44 @@ void loop() {
 
 BLYNK_WRITE(V1) {
     String input = param.asStr();
+    bool handled = false;
     if(input.equalsIgnoreCase("CONNS")) {
         char list[128];
         protocol_list_devices(list, sizeof(list));
         Blynk.virtualWrite(V1, list);
-        return;
-    }
-    if(input.equalsIgnoreCase("ABORT")) {
+        handled = true;
+    } else if(input.equalsIgnoreCase("ABORT")) {
         protocol_send_abort();
-        return;
-    }
-    int arrow = input.indexOf("->");
-    if(arrow > 0){
-        String op = input.substring(0, arrow);
-        String dest = input.substring(arrow+2);
-        if(op.startsWith("movement_sensor_on")){
-            unsigned long dur = 5000;
-            int idx = op.lastIndexOf('_');
-            if(idx > String("movement_sensor_on").length()){
-                dur = op.substring(idx+1).toInt();
+        handled = true;
+    } else if(input.equalsIgnoreCase("HELP")) {
+        Blynk.virtualWrite(V1,
+            "Comandi disponibili:\n"
+            "CONNS: lista dispositivi connessi\n"
+            "ABORT: interrompe la trasmissione corrente\n"
+            "movement_sensor_on[_durata_ms]->ID: attiva il sensore di movimento (default 5000 ms)\n"
+            "REQ->ID, SET->ID, OK->ID, MOVEMENT->ID, EXT->ID: invia il comando indicato al dispositivo\n"
+            "HELP: mostra questo messaggio");
+        handled = true;
+    } else {
+        int arrow = input.indexOf("->");
+        if(arrow > 0){
+            String op = input.substring(0, arrow);
+            String dest = input.substring(arrow+2);
+            if(op.startsWith("movement_sensor_on")){
+                unsigned long dur = 5000;
+                int idx = op.lastIndexOf('_');
+                if(idx > String("movement_sensor_on").length()){
+                    dur = op.substring(idx+1).toInt();
+                }
+                protocol_send_movement_request(dest.c_str(), dur);
+                handled = true;
+            } else if(command_from_string(op.c_str()) != CMD_UNKNOWN){
+                protocol_send_command(dest.c_str(), op.c_str());
+                handled = true;
             }
-            protocol_send_movement_request(dest.c_str(), dur);
-        } else if(command_from_string(op.c_str()) != CMD_UNKNOWN){
-            protocol_send_command(dest.c_str(), op.c_str());
         }
+    }
+    if(!handled){
+        Blynk.virtualWrite(V1, "Comando non riconosciuto digita help per tutti i comandi");
     }
 }
