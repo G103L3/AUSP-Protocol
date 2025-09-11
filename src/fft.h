@@ -1,26 +1,32 @@
 /*! \file fft.h
-* \brief Performs the FFT of an array of voltage levels
-*/
+ * \author Gioele Giunta
+ * \version 3.0
+ * \since 2025
+ * \brief Interfaccia del modulo fft
+ */
 
 #ifndef FFT_H
 #define FFT_H
+/* Librerie */
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+/* Headers specifici */
+#include "complex_g3.h"
+#include "global_parameters.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* C Library Headers */
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
 
 /* Driver Headers */
 
 /* Our Headers */
-#include "complex_g3.h"
-#include "global_parameters.h"
 
-#define NN G_ARRAY_SIZE  // Define the maximum FFT size, must be a power of 2
+#define NN G_ARRAY_SIZE  /* Define the maximum FFT size, must be a power of 2 */
 
 /**
  * \brief Simplified interface to perform FFT on a complex array of voltage levels

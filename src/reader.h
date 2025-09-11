@@ -1,17 +1,27 @@
+/*! \file reader.h
+ * \author Gioele Giunta
+ * \version 1.3
+ * \since 2025
+ * \brief Interfaccia del modulo reader
+ */
+
 #ifndef READER_H_
 #define READER_H_
+/* Librerie */
+#include <stdio.h>
+#include <stdlib.h>
+#include <driver/i2s.h>
+
+/* Headers specifici */
+#include "complex_g3.h"
+#include "global_parameters.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
 
-#include <driver/i2s.h>
 
-#include "complex_g3.h"
-#include "global_parameters.h"
 
 #define ARRAY_ELEMENTS G_ARRAY_SIZE
 #define SAMPLE_RATE G_SAMPLE_RATE
@@ -30,4 +40,4 @@ void reader_init(void);
 }
 #endif
 
-#endif // READER_H_
+#endif /* READER_H_ */

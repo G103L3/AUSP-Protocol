@@ -1,13 +1,26 @@
-#include "protocol.h"
-#include "command_dict.h"
-#include "bit_output_packer.h"
-#include "emit_tones.h"
-#include "movement_sensor.h"
+/*! \file protocol.c
+ * \author Gioele Giunta
+ * \version 3.0
+ * \since 2025
+ * \brief Implementazione del modulo protocol
+ */
+
+/* Librerie */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <Arduino.h>
 
+/* Headers specifici */
+#include "protocol.h"
+#include "command_dict.h"
+#include "bit_output_packer.h"
+#include "emit_tones.h"
+#include "movement_sensor.h"
+/**
+ * @brief Funzione now_ms.
+ * @return Valore di ritorno.
+ */
 
 static unsigned long now_ms(void){ return millis(); }
 
@@ -35,6 +48,11 @@ static unsigned long retry_interval = RETRY_MS;
 static unsigned long retry_at = 0;
 
 static ProtocolMessageCallback msg_cb = NULL;
+/**
+ * @brief Funzione log_recv.
+ * @param msg Parametro msg.
+ * @return Valore di ritorno.
+ */
 
 
 static void log_recv(const char *msg){
@@ -44,6 +62,11 @@ static void log_recv(const char *msg){
         msg_cb(buf);
     }
 }
+/**
+ * @brief Funzione log_send.
+ * @param msg Parametro msg.
+ * @return Valore di ritorno.
+ */
 
 static void log_send(const char *msg){
     if(hotspot && msg_cb){
@@ -52,42 +75,88 @@ static void log_send(const char *msg){
         msg_cb(buf);
     }
 }
+/**
+ * @brief Funzione estimate_send_duration.
+ * @param packer Parametro packer.
+ * @return Valore di ritorno.
+ */
 
-static void send_master(const char *msg){
+static unsigned long estimate_send_duration(const BitOutputPacker *packer){
+    unsigned long ms = 0;
+    for(size_t i = 0; i < packer->pair_count; ++i){
+        if(packer->pairs[i].tones[0] == 0 && packer->pairs[i].tones[1] == 0){
+            ms += 80;
+        } else {
+            ms += 24;
+        }
+    }
+    return ms;
+}
+/**
+ * @brief Funzione send_master.
+ * @param msg Parametro msg.
+ * @return Valore di ritorno.
+ */
+
+static unsigned long send_master(const char *msg){
     log_send(msg);
     BitOutputPacker packer;
     bit_output_packer_init(&packer);
+    unsigned long duration = 0;
     if(bit_output_packer_compress(&packer, msg)){
         if(bit_output_packer_convert(&packer, 0)){
+            duration = estimate_send_duration(&packer);
             emit_tones(packer.pairs, packer.pair_count);
         }
     }
     bit_output_packer_free(&packer);
+    return duration;
 }
+/**
+ * @brief Funzione send_slave.
+ * @param msg Parametro msg.
+ * @return Valore di ritorno.
+ */
 
-static void send_slave(const char *msg){
+static unsigned long send_slave(const char *msg){
     log_send(msg);
     BitOutputPacker packer;
     bit_output_packer_init(&packer);
+    unsigned long duration = 0;
     if(bit_output_packer_compress(&packer, msg)){
         if(bit_output_packer_convert(&packer, 1)){
+            duration = estimate_send_duration(&packer);
             emit_tones(packer.pairs, packer.pair_count);
         }
     }
     bit_output_packer_free(&packer);
+    return duration;
 }
+/**
+ * @brief Funzione send_config.
+ * @param msg Parametro msg.
+ * @return Valore di ritorno.
+ */
 
-static void send_config(const char *msg){
+static unsigned long send_config(const char *msg){
     log_send(msg);
     BitOutputPacker packer;
     bit_output_packer_init(&packer);
+    unsigned long duration = 0;
     if(bit_output_packer_compress(&packer, msg)){
         if(bit_output_packer_convert(&packer, 2)){
+            duration = estimate_send_duration(&packer);
             emit_tones(packer.pairs, packer.pair_count);
         }
     }
     bit_output_packer_free(&packer);
+    return duration;
 }
+/**
+ * @brief Funzione register_device.
+ * @param id Parametro id.
+ * @return Valore di ritorno.
+ */
 
 static void register_device(const char *id){
     for(size_t i=0;i<known_count;i++){
@@ -100,22 +169,31 @@ static void register_device(const char *id){
         known_count++;
     }
 }
+/**
+ * @brief Funzione assign_new_id.
+ * @param pid Parametro pid.
+ * @return Valore di ritorno.
+ */
 
 static void assign_new_id(const char *pid){
     char new_id[5];
     snprintf(new_id, sizeof(new_id), "%04X", id_counter++ & 0xFFFF);
     char resp[64];
     snprintf(resp, sizeof(resp), "ID:%s{SET:%s}k{0000}", pid, new_id);
-    send_config(resp);
+    unsigned long dur = send_config(resp);
     strncpy(pending_cmd, resp, sizeof(pending_cmd)-1);
     pending_cmd[sizeof(pending_cmd)-1] = '\0';
     strncpy(pending_dest, new_id, sizeof(pending_dest));
     pending_type = PEND_CONFIG;
     awaiting_ack = true;
     awaiting_response = false;
-    retry_interval = RETRY_MS;
+    retry_interval = dur + RETRY_MS;
     retry_at = now_ms() + retry_interval;
 }
+/**
+ * @brief Funzione protocol_init.
+ * @param is_hotspot Parametro is_hotspot.
+ */
 
 void protocol_init(bool is_hotspot){
     hotspot = is_hotspot;
@@ -131,10 +209,20 @@ void protocol_init(bool is_hotspot){
         send_config(req);
     }
 }
+/**
+ * @brief Funzione protocol_device_id.
+ * @return Valore di ritorno.
+ */
 
 const char* protocol_device_id(void){
     return my_id;
 }
+/**
+ * @brief Funzione handle_set.
+ * @param dest Parametro dest.
+ * @param value Parametro value.
+ * @return Valore di ritorno.
+ */
 
 static void handle_set(const char *dest, const char *value){
     if(!hotspot && strcmp(dest, provisional_id)==0){
@@ -145,6 +233,11 @@ static void handle_set(const char *dest, const char *value){
         send_config(ack);
     }
 }
+/**
+ * @brief Funzione handle_ok.
+ * @param src Parametro src.
+ * @return Valore di ritorno.
+ */
 
 static void handle_ok(const char *src){
     if(hotspot){
@@ -169,30 +262,41 @@ static void handle_ok(const char *src){
         }
     }
 }
+/**
+ * @brief Funzione protocol_tick.
+ */
 
 
 void protocol_tick(void){
     unsigned long now = now_ms();
     if(awaiting_ack && now > retry_at){
-        retry_at = now + retry_interval;
+        unsigned long dur = 0;
         switch(pending_type){
             case PEND_CONFIG:
-                send_config(pending_cmd);
+                dur = send_config(pending_cmd);
                 break;
             case PEND_MASTER:
-                send_master(pending_cmd);
+                dur = send_master(pending_cmd);
                 break;
             case PEND_SLAVE:
-                send_slave(pending_cmd);
+                dur = send_slave(pending_cmd);
                 break;
             default:
                 break;
         }
-    } else if(awaiting_response && now > retry_at){
+        retry_interval = dur + RETRY_MS;
         retry_at = now + retry_interval;
-        send_master(pending_cmd);
+    } else if(awaiting_response && now > retry_at){
+        unsigned long dur = send_master(pending_cmd);
+        retry_interval = dur + RETRY_MS;
+        retry_at = now + retry_interval;
     }
 }
+/**
+ * @brief Funzione protocol_handle_message.
+ * @param ch Parametro ch.
+ * @param msg Parametro msg.
+ */
 
 void protocol_handle_message(ChannelType ch, const char *msg){
     if(!msg) return;
@@ -400,6 +504,11 @@ void protocol_handle_message(ChannelType ch, const char *msg){
         return;
     }
 }
+/**
+ * @brief Funzione protocol_send_command.
+ * @param dest_id Parametro dest_id.
+ * @param operation Parametro operation.
+ */
 
 void protocol_send_command(const char *dest_id, const char *operation){
     if(!hotspot) return;
@@ -409,10 +518,15 @@ void protocol_send_command(const char *dest_id, const char *operation){
     pending_type = PEND_MASTER;
     awaiting_ack = true;
     awaiting_response = false;
-    retry_interval = RETRY_MS;
-    send_master(pending_cmd);
+    unsigned long dur = send_master(pending_cmd);
+    retry_interval = dur + RETRY_MS;
     retry_at = now_ms() + retry_interval;
 }
+/**
+ * @brief Funzione protocol_send_movement_request.
+ * @param dest_id Parametro dest_id.
+ * @param duration_ms Parametro duration_ms.
+ */
 
 void protocol_send_movement_request(const char *dest_id, unsigned long duration_ms){
     if(!hotspot) return;
@@ -429,10 +543,14 @@ void protocol_send_movement_request(const char *dest_id, unsigned long duration_
     pending_type = PEND_MASTER;
     awaiting_ack = false;
     awaiting_response = true;
-    retry_interval = duration_ms + RETRY_MS;
-    send_master(pending_cmd);
+    unsigned long dur = send_master(pending_cmd);
+    retry_interval = duration_ms + dur + RETRY_MS;
     retry_at = now_ms() + retry_interval;
 }
+/**
+ * @brief Funzione protocol_send_response.
+ * @param operation Parametro operation.
+ */
 
 void protocol_send_response(const char *operation){
     if(hotspot) return;
@@ -441,10 +559,13 @@ void protocol_send_response(const char *operation){
     pending_type = PEND_SLAVE;
     awaiting_ack = true;
     awaiting_response = false;
-    retry_interval = RETRY_MS;
-    send_slave(pending_cmd);
+    unsigned long dur = send_slave(pending_cmd);
+    retry_interval = dur + RETRY_MS;
     retry_at = now_ms() + retry_interval;
 }
+/**
+ * @brief Funzione protocol_send_abort.
+ */
 
 void protocol_send_abort(void){
     if(!hotspot) return;
@@ -454,6 +575,11 @@ void protocol_send_abort(void){
     delay(50);
     send_master(msg);
 }
+/**
+ * @brief Funzione protocol_list_devices.
+ * @param buf Parametro buf.
+ * @param buflen Parametro buflen.
+ */
 
 void protocol_list_devices(char *buf, size_t buflen){
     if(!buf || buflen == 0) return;
@@ -468,6 +594,10 @@ void protocol_list_devices(char *buf, size_t buflen){
         strncat(buf, "\n", buflen - strlen(buf) - 1);
     }
 }
+/**
+ * @brief Funzione protocol_set_message_callback.
+ * @param cb Parametro cb.
+ */
 
 void protocol_set_message_callback(ProtocolMessageCallback cb){
     msg_cb = cb;

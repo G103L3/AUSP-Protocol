@@ -1,17 +1,20 @@
 /*! \file complex_g3.h
-* \brief Custom complex number implementation
-*
-* This implements a narrow subset of the \a complex.h file in the C standard library, thus conforming to stock C89.
-*/
+ * \author Gioele Giunta
+ * \version 3.4
+ * \since 2025
+ * \brief Interfaccia del modulo complex g3
+ */
 
 #ifndef COMPLEX_G3_H
 #define COMPLEX_G3_H
-
+/* Librerie */
 #include <math.h>
 
-/* Our Headers */
+/* Headers specifici */
 #include "complex_g3.h"
 #include "global_parameters.h"
+
+/* Our Headers */
 
 /*! \typedef complex_g3_t
 * \brief Custom complex number implementation

@@ -1,6 +1,13 @@
+/*! \file char_packet_router.h
+ * \author Gioele Giunta
+ * \version 2.7
+ * \since 2025
+ * \brief Interfaccia del modulo char packet router
+ */
+
 #ifndef CHAR_PACKET_ROUTER_H
 #define CHAR_PACKET_ROUTER_H
-
+/* Headers specifici */
 #include "char_packet.h"
 
 #ifdef __cplusplus
@@ -21,4 +28,4 @@ CharPacket *char_packet_router_get_output(ChannelType ch);
 }
 #endif
 
-#endif // CHAR_PACKET_ROUTER_H
+#endif /* CHAR_PACKET_ROUTER_H */

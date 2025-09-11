@@ -1,17 +1,27 @@
 /*! \file decoder.c
-* \brief Functions for decoder.h
-*/
+ * \author Gioele Giunta
+ * \version 1.9
+ * \since 2025
+ * \brief Implementazione del modulo decoder
+ */
+
+/* Headers specifici */
+#include "decoder.h"
+#include "string.h"
+#include "leds.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "decoder.h"
-#include "string.h"
-#include "leds.h"
-#include <stdlib.h>
 
-// Calcola il rumore medio dello spettro per stabilire soglie dinamiche
+/* Calcola il rumore medio dello spettro per stabilire soglie dinamiche */
+/**
+ * @brief Funzione estimate_noise_floor.
+ * @param data Parametro data.
+ * @param size Parametro size.
+ * @return Valore di ritorno.
+ */
 double estimate_noise_floor(complex_g3_t *data, int size) {
     double sum = 0.0;
     for (int i = 0; i < size; i++) {
@@ -20,7 +30,7 @@ double estimate_noise_floor(complex_g3_t *data, int size) {
     return sum / (double)size;
 }
 
-//Test
+/*Test */
 double sum_bins = 0, sum_amp = 0, sum_bins2 = 0, sum_bins_amp = 0, slope = 0, intercept = 0;
 int regress_count = 0;
 
@@ -29,7 +39,7 @@ double const T = 1.0 / FS;  /* Sampling interval */
 
 /* AUSP FREQUENCIES */
 int ausp_freq[] = {
-        // Prima riga: MASTER_BASE
+        /* Prima riga: MASTER_BASE */
         MASTER_BASE + (0  * TONE_STEP), MASTER_BASE + (1  * TONE_STEP),
         MASTER_BASE + (2  * TONE_STEP), MASTER_BASE + (3  * TONE_STEP),
         MASTER_BASE + (4  * TONE_STEP), MASTER_BASE + (5  * TONE_STEP),
@@ -41,7 +51,7 @@ int ausp_freq[] = {
         MASTER_BASE + (16 * TONE_STEP), MASTER_BASE + (17 * TONE_STEP),
         MASTER_BASE + (18 * TONE_STEP),
     
-        // Seconda riga: SLAVE_BASE
+        /* Seconda riga: SLAVE usa le stesse frequenze del master con portante a 9000 Hz */
         SLAVE_BASE + (0  * TONE_STEP), SLAVE_BASE + (1  * TONE_STEP),
         SLAVE_BASE + (2  * TONE_STEP), SLAVE_BASE + (3  * TONE_STEP),
         SLAVE_BASE + (4  * TONE_STEP), SLAVE_BASE + (5  * TONE_STEP),
@@ -51,9 +61,9 @@ int ausp_freq[] = {
         SLAVE_BASE + (12 * TONE_STEP), SLAVE_BASE + (13 * TONE_STEP),
         SLAVE_BASE + (14 * TONE_STEP), SLAVE_BASE + (15 * TONE_STEP),
         SLAVE_BASE + (16 * TONE_STEP), SLAVE_BASE + (17 * TONE_STEP),
-        SLAVE_BASE + (18 * TONE_STEP),
+        SLAVE_CARRIER,
     
-        // Terza riga: CONFIG usa le stesse frequenze del master ma con portante a 8600 Hz
+        /* Terza riga: CONFIG usa le stesse frequenze del master ma con portante a 8600 Hz */
         CONFIG_BASE + (0  * TONE_STEP), CONFIG_BASE + (1  * TONE_STEP),
         CONFIG_BASE + (2  * TONE_STEP), CONFIG_BASE + (3  * TONE_STEP),
         CONFIG_BASE + (4  * TONE_STEP), CONFIG_BASE + (5  * TONE_STEP),
@@ -87,6 +97,11 @@ struct_interpolated_frequency interpolate_peak_frequency(complex_g3_t *data, int
  * This function checks for specific frequencies in the FFT output and returns a struct_tone_frequencies
  * containing the detected frequencies for master, slave, and configuration.
  */
+/**
+ * @brief Funzione decode_ausp.
+ * @param data Parametro data.
+ * @return Valore di ritorno.
+ */
 struct_tone_frequencies decode_ausp(complex_g3_t *data) 
 {
 	struct_tone_frequencies decoded_tones;
@@ -113,7 +128,17 @@ struct_tone_frequencies decode_ausp(complex_g3_t *data)
                                 int column;
                                 int l = i % ROW_LEN;
                                 if(l >= 0 && l <= 8){column = 0;}
+/**
+ * @brief Funzione if.
+ * @param 17 Parametro 17.
+ * @return Valore di ritorno.
+ */
                                 else if(l >= 9 && l <= 17){column = 2;}
+/**
+ * @brief Funzione if.
+ * @param 18 Parametro 18.
+ * @return Valore di ritorno.
+ */
                                 else if(l == 18){column = 1;}
                                 if(row < 3 && column < 3) {
                                         results_[row][column] = ausp_freq[i];
@@ -126,7 +151,17 @@ struct_tone_frequencies decode_ausp(complex_g3_t *data)
                                 int column;
                                 int l = i % ROW_LEN;
                                 if(l >= 0 && l <= 8){column = 0;}
+/**
+ * @brief Funzione if.
+ * @param 17 Parametro 17.
+ * @return Valore di ritorno.
+ */
                                 else if(l >= 9 && l <= 17){column = 2;}
+/**
+ * @brief Funzione if.
+ * @param 18 Parametro 18.
+ * @return Valore di ritorno.
+ */
                                 else if(l == 18){column = 1;}
                                 if(row < 3 && column < 3) {
                                         results_[row][column] = -1;
@@ -149,13 +184,22 @@ struct_tone_frequencies decode_ausp(complex_g3_t *data)
  * This structure contains the frequency, estimated amplitude, dynamic amplitude threshold,
  * and a work flag indicating if the frequency was successfully detected.
  */
+/**
+ * @brief Funzione check_active_frequencies.
+ * @param data Parametro data.
+ * @param bin_1 Parametro bin_1.
+ * @param bin_2 Parametro bin_2.
+ * @param id Parametro id.
+ * @param noise_floor Parametro noise_floor.
+ * @return Valore di ritorno.
+ */
 struct_interpolated_frequency check_active_frequencies(complex_g3_t *data, int  bin_1, int bin_2, int id, double noise_floor){
         int i, j;
         struct_interpolated_frequency detected_freq;
         detected_freq.work = 0;
-        detected_freq.frequency = -1.0;  // Default value indicating no frequency detected
-        detected_freq.estimated_amplitude = -1.0;  // Default value indicating no amplitude detected
-        detected_freq.dynamic_amplitude_threshold = -1.0;  // Default value indicating no threshold detected
+        detected_freq.frequency = -1.0;  /* Default value indicating no frequency detected */
+        detected_freq.estimated_amplitude = -1.0;  /* Default value indicating no amplitude detected */
+        detected_freq.dynamic_amplitude_threshold = -1.0;  /* Default value indicating no threshold detected */
         for (j = bin_1; j <=bin_2; j++)
         {
                 double freq = (double)(FS * j) / NN;
@@ -200,43 +244,56 @@ struct_interpolated_frequency check_active_frequencies(complex_g3_t *data, int  
  * This structure contains the frequency, estimated amplitude, dynamic amplitude threshold,
  * and a work flag indicating if the frequency was successfully detected.
  */
+/**
+ * @brief Funzione interpolate_peak_frequency.
+ * @param data Parametro data.
+ * @param peak_bin Parametro peak_bin.
+ * @param sample_rate Parametro sample_rate.
+ * @param fft_size Parametro fft_size.
+ * @return Valore di ritorno.
+ */
 struct_interpolated_frequency interpolate_peak_frequency(complex_g3_t *data, int peak_bin, double sample_rate, int fft_size) {
-    // Evita di fare interpolazione se il picco è al bordo dello spettro
+    /* Evita di fare interpolazione se il picco è al bordo dello spettro */
     if (peak_bin <= 0 || peak_bin >= fft_size - 1) {
-			//Formattazione del Return
+			/*Formattazione del Return */
 			struct_interpolated_frequency frequency;
 			frequency.frequency = peak_bin * sample_rate / fft_size;
 			frequency.estimated_amplitude = complex_magnitude(data[peak_bin]);
         return frequency;
     }
     
-    // Ottieni le ampiezze dei tre bin
+    /* Ottieni le ampiezze dei tre bin */
     double alpha = complex_magnitude(data[peak_bin-1]);
     double beta = complex_magnitude(data[peak_bin]);
     double gamma = complex_magnitude(data[peak_bin+1]);
 
 	serial_write_formatted("Debug: Alpha %f Beta %f Gamma %f\n", alpha, beta, gamma);
     
-    // Formula dell'interpolazione parabolica
+    /* Formula dell'interpolazione parabolica */
     double p = 0.5 * (alpha - gamma) / (alpha - 2 * beta + gamma);
     
-    // Limita p nell'intervallo [-0.5, 0.5] per evitare risultati anomali
+    /* Limita p nell'intervallo [-0.5, 0.5] per evitare risultati anomali */
     if (p < -0.5) p = -0.5;
     if (p > 0.5) p = 0.5;
     
-    // Calcola la frequenza interpolata
+    /* Calcola la frequenza interpolata */
     double interpolated_bin = peak_bin + p;
     double interpolated_freq = interpolated_bin * sample_rate / fft_size;
     
-	// Calcola l'ampiezza interpolata
+	/* Calcola l'ampiezza interpolata */
 	double interpolated_amplitude = beta - 0.25 * (alpha - gamma) * p;
 
-	//Formattazione del Return
+	/*Formattazione del Return */
 	struct_interpolated_frequency frequency;
 	frequency.frequency = interpolated_freq;
 	frequency.estimated_amplitude = interpolated_amplitude;
     return frequency;
 }
+/**
+ * @brief Funzione regress_linear_update.
+ * @param bin Parametro bin.
+ * @param amplitude Parametro amplitude.
+ */
 
 
 void regress_linear_update(const int bin, const double amplitude) {

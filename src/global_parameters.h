@@ -1,16 +1,16 @@
 /*! \file global_parameters.h
  * \author Gioele Giunta
- * \version 1.4
- * \since 21<sup>st</sup> April 2024
- * \brief Project wide variables and definitions
- * \note Modificato per ESP32 con DMA e 48kHz sampling
+ * \version 1.6
+ * \since 2025
+ * \brief Interfaccia del modulo global parameters
  */
+
 #ifndef GLOBAL_PARAMETERS_H_
 #define GLOBAL_PARAMETERS_H_
+/* Librerie */
 #include <Arduino.h>
 
-
-#define G_MODE 1 // 0: No debug, 1: Info, 2: Debug
+#define G_MODE 1 /* 0: No debug, 1: Info, 2: Debug */
 /* 48000 è il nuovo sample rate, 48000 campioni al secondo */
 #define G_SAMPLE_RATE 48000
 
@@ -26,33 +26,34 @@
 #define G_SEQUENCE_LENGTH 100
 #define G_PI 3.14159265358979323846
 
-#define G_LINEAR_REGRESSION_MODE 0 // 0: No linear regression, 1: Linear regression Emitting 2: Linear regression Decoding 
+#define G_LINEAR_REGRESSION_MODE 0 /* 0: No linear regression, 1: Linear regression Emitting 2: Linear regression Decoding  */
 
-#define G_TESTING_MODE 0 // 0: Both modes active, 1: Only Emitting, 2: Only Decoding
+#define G_TESTING_MODE 0 /* 0: Both modes active, 1: Only Emitting, 2: Only Decoding */
 
-//AUSP frequencies pattern (adjusted for 400 Hz tone spacing)
+/*AUSP frequencies pattern (adjusted for 400 Hz tone spacing) */
 #define MASTER_BASE 1000
-#define SLAVE_BASE 4800
+#define SLAVE_BASE MASTER_BASE
 #define CONFIG_BASE MASTER_BASE
+#define SLAVE_CARRIER 9000
 #define CONFIG_CARRIER 8600
 #define TONE_STEP 400
 #define ROW_LEN      19
 
-//MAP PINS
+/*MAP PINS */
 #define RED_LED         13
 #define BLUE_LED        12
 #define GREEN_LED       14
 #define I2S_DATA_PIN    27    /**< Serial Data (DIN) pin connected to GPIO14 */
 #define I2S_BCK_PIN     26    /**< Bit Clock pin (BCLK) connected to GPIO33 */
 #define I2S_WS_PIN      25    /**< Word Select (LRC) pin connected to GPIO32 */
-// Pin configuration for I2S microphone (INMP441)
-#define I2S_MIC_BCK_PIN 33   // BCLK
-#define I2S_MIC_WS_PIN  32  // LRCL (word select)
-#define I2S_MIC_SD_PIN  35  // DOUT
-//Pin HotSpot mode
-#define HOTSPOT_PIN     34    // Pin to enable HotSpot mode (HIGH = HotSpot mode enabled)
-//Pin Sensors 
-#define PIR_PIN         39    // Pin for PIR motion sensor
+/* Pin configuration for I2S microphone (INMP441) */
+#define I2S_MIC_BCK_PIN 33   /* BCLK */
+#define I2S_MIC_WS_PIN  32  /* LRCL (word select) */
+#define I2S_MIC_SD_PIN  35  /* DOUT */
+/*Pin HotSpot mode */
+#define HOTSPOT_PIN     34    /* Pin to enable HotSpot mode (HIGH = HotSpot mode enabled) */
+/*Pin Sensors  */
+#define PIR_PIN         39    /* Pin for PIR motion sensor */
 
 
 typedef struct struct_out_tones {
