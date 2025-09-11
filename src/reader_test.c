@@ -1,31 +1,38 @@
 /*! \file reader_test.c
  * \author Gioele Giunta
- * \version 1.0
- * \since 28<sup>th</sup> May 2025
- * \brief Test Reader for ESP32, reads 1024 samples once.
+ * \version 2.5
+ * \since 2025
+ * \brief Implementazione del modulo reader test
  */
+
+/* Librerie */
+#include <string.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <esp_adc_cal.h>
+
+/* Headers specifici */
+#include "reader_test.h"
 
  #ifdef __cplusplus
  extern "C" {
  #endif
  
- #include "reader_test.h"
- #include <string.h>
- #include <freertos/FreeRTOS.h>
- #include <freertos/task.h>
- #include <esp_adc_cal.h>
- #include "reading_queue.h"
- #include "global_parameters.h"
  
  /* Task handle */
  static TaskHandle_t reader_test_task_handle = NULL;
  static double bias = 0.0;
+/**
+ * @brief Funzione reader_test_task.
+ * @param param Parametro param.
+ * @return Valore di ritorno.
+ */
  
  static void reader_test_task(void *param) {
     size_t bytes_read;
-    uint16_t dma_buffer[1024]; // 1024 campioni = 2048 bytes
+    uint16_t dma_buffer[1024]; /* 1024 campioni = 2048 bytes */
 
-    // Una sola lettura: 1024 campioni (2048 bytes)
+    /* Una sola lettura: 1024 campioni (2048 bytes) */
     i2s_read(I2S_PORT, (void*)dma_buffer, 2048, &bytes_read, portMAX_DELAY);
 
     int samples = bytes_read / 2;
@@ -43,12 +50,14 @@
     i2s_adc_disable(I2S_PORT);
     vTaskDelete(NULL);
 }
+/**
+ * @brief Funzione reader_test_init.
+ */
  
- /*! \brief Reader test initialization: configures ADC, I2S, allocates buffers and launches test task */
  void reader_test_init(void) {
      serial_init(115200);
  
-     // ADC calibration
+     /* ADC calibration */
      uint32_t sum = 0;
      for (int i = 0; i < 1024; i++) {
          sum += adc1_get_raw(AUDIO_PIN);
@@ -59,7 +68,7 @@
      esp_adc_cal_characteristics_t adc_chars;
      esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, 1100, &adc_chars);
  
-     // I2S configuration
+     /* I2S configuration */
      i2s_config_t i2s_config = {
          .mode = I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_ADC_BUILT_IN,
          .sample_rate = SAMPLE_RATE,
@@ -76,10 +85,10 @@
      i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL);
      i2s_set_adc_mode(ADC_UNIT_1, AUDIO_PIN);
  
-     // Enable ADC in I2S mode
+     /* Enable ADC in I2S mode */
      i2s_adc_enable(I2S_PORT);
  
-     // Launch test reader task
+     /* Launch test reader task */
      xTaskCreate(reader_test_task, "reader_test_task", 4096, NULL, 5, &reader_test_task_handle);
  }
  

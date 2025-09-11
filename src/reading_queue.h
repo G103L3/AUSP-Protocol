@@ -1,3 +1,20 @@
+/*! \file reading_queue.h
+ * \author Gioele Giunta
+ * \version 2.2
+ * \since 2025
+ * \brief Interfaccia del modulo reading queue
+ */
+
+/* Librerie */
+#include <stdint.h>
+#include <stdbool.h>
+#include "complex_g3.h"  ///< complex_g3_t definition
+
+/* Headers specifici */
+#include "complex_g3.h"  ///< complex_g3_t definition
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+
 /*
  * @file reading_queue.h
  * @brief Ring buffer FIFO queue for sequential data reading using a circular buffer.
@@ -13,11 +30,6 @@
  extern "C" {
  #endif
  
- #include <stdint.h>
- #include <stdbool.h>
- #include "complex_g3.h"  ///< complex_g3_t definition
- #include "freertos/FreeRTOS.h"
- #include "freertos/semphr.h"
  
  #define READING_QUEUE_SIZE G_WINDOW_SIZE
  
@@ -26,9 +38,9 @@
   */
  typedef struct {
      complex_g3_t data[READING_QUEUE_SIZE];
-     uint16_t head;          ///< Next write index
-     uint16_t tail;          ///< Next read index (oldest)
-     SemaphoreHandle_t mutex;///< Protects buffer access
+     uint16_t head;          /*/< Next write index */
+     uint16_t tail;          /*/< Next read index (oldest) */
+     SemaphoreHandle_t mutex;/*/< Protects buffer access */
  } reading_queue_t;
  
  /** Global queue instance */
@@ -64,5 +76,5 @@
  }
  #endif
  
- #endif // READING_QUEUE_H
+ #endif /* READING_QUEUE_H */
  

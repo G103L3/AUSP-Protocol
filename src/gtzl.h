@@ -1,11 +1,13 @@
 /*! \file gtzl.h
-* \author Gabriel Carabott
-* \brief Determines the amplitude for each DTMF frequency from an array of voltage levels
-*/
+ * \author Gioele Giunta
+ * \version 2.3
+ * \since 2025
+ * \brief Interfaccia del modulo gtzl
+ */
 
 #ifndef GTZL_H_
 #define GTZL_H_
-
+/* Headers specifici */
 #include "complex_g3.h"
 
 /*! \def DTMF_FREQ_AMT
