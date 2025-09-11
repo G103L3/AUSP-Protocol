@@ -1,13 +1,23 @@
+/*! \file audio_driver.h
+ * \author Gioele Giunta
+ * \version 1.4
+ * \since 2025
+ * \brief Interfaccia del modulo audio driver
+ */
+
 #ifndef AUDIO_DRIVER_H
 #define AUDIO_DRIVER_H
+/* Librerie */
+#include <driver/i2s.h>
+
+/* Headers specifici */
+#include "global_parameters.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <driver/i2s.h>
 
-#include "global_parameters.h"
 
 #define I2S_NUM         I2S_NUM_1         /**< I2S peripheral number */
 #ifndef PI
@@ -65,4 +75,4 @@ void play_nine_tones(const int freqs[9]);
 }
 #endif
 
-#endif // AUDIO_DRIVER_H
+#endif /* AUDIO_DRIVER_H */

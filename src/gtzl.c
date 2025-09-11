@@ -1,15 +1,17 @@
 /*! \file gtzl.c
- * \author Gabriel Carabott
- * \sa gtzl.h
- * \brief Functions for gtzl.h
- *
- * The code here has been adapted from the algorithm defined in <a href="https://www.embedded.com/the-goertzel-algorithm/" target="_blank" rel="nofollow noreferrer noopener">`The Goertzel Algorithm' at www.embedded.com</a>.
+ * \author Gioele Giunta
+ * \version 2.2
+ * \since 2025
+ * \brief Implementazione del modulo gtzl
  */
 
- #include "global_parameters.h"
- #include "complex_g3.h"
- #include "gtzl.h"
- #include <math.h>
+/* Librerie */
+#include <math.h>
+
+/* Headers specifici */
+#include "global_parameters.h"
+#include "gtzl.h"
+
  
  /* Constants */
  #ifndef M_PI
@@ -87,6 +89,12 @@
  double mag_eqn_optimised(double q1, double q2, double cef);
  
  /* Goertzel Algorithm Implementation */
+/**
+ * @brief Funzione goertzel.
+ * @param signal Parametro signal.
+ * @param amplitudes[10] Parametro amplitudes[10].
+ * @return Valore di ritorno.
+ */
  int goertzel(complex_g3_t* signal, double amplitudes[10]) {
 	
 	 double q1[10] = {0};
@@ -110,6 +118,13 @@
  }
  
  /* Optimized Magnitude Equation */
+/**
+ * @brief Funzione mag_eqn_optimised.
+ * @param q1 Parametro q1.
+ * @param q2 Parametro q2.
+ * @param cef Parametro cef.
+ * @return Valore di ritorno.
+ */
  double mag_eqn_optimised(double q1, double q2, double cef) {
 	 return (q1 * q1) + (q2 * q2) - (q1 * q2 * cef);
  }

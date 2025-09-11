@@ -1,20 +1,26 @@
 /*! \file decoder.h
-* \brief Identifies the dominant frequencies in a DTMF compliant signal using the FFT technique
-*/
+ * \author Gioele Giunta
+ * \version 1.4
+ * \since 2025
+ * \brief Interfaccia del modulo decoder
+ */
 
 #ifndef DECODER_H_
 #define DECODER_H_
+/* Librerie */
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+/* Headers specifici */
+#include "complex_g3.h"
+#include "global_parameters.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include "complex_g3.h"
 
-#include "global_parameters.h"
 
 #define NN G_ARRAY_SIZE  /* Define the maximum FFT size, must be a power of 2 */
 #define FS G_SAMPLE_RATE

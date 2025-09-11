@@ -1,15 +1,25 @@
+/*! \file bit_input_packer.h
+ * \author Gioele Giunta
+ * \version 1.7
+ * \since 2025
+ * \brief Interfaccia del modulo bit input packer
+ */
+
 #ifndef BIT_PACKER_H
 #define BIT_PACKER_H
+/* Librerie */
+#include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
+
+/* Headers specifici */
+#include "global_parameters.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <stdint.h>
-#include <stddef.h>
-#include <stdbool.h>
 
-#include "global_parameters.h"
 
 #define MAX_ARRAY_SIZE 1024
 #define NUM_ARRAYS 3
@@ -71,4 +81,4 @@ extern bool config_ascii_ready;
 }
 #endif
 
-#endif // BIT_PACKER_H
+#endif /* BIT_PACKER_H */

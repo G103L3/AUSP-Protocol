@@ -1,6 +1,12 @@
+/*! \file command_dict.h
+ * \author Gioele Giunta
+ * \version 2.9
+ * \since 2025
+ * \brief Interfaccia del modulo command dict
+ */
+
 #ifndef COMMAND_DICT_H
 #define COMMAND_DICT_H
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -22,4 +28,4 @@ const char* command_to_string(Command cmd);
 }
 #endif
 
-#endif // COMMAND_DICT_H
+#endif /* COMMAND_DICT_H */

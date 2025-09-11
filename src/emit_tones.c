@@ -1,12 +1,29 @@
-#ifdef __cplusplus
-extern "C" {
-#endif
+/*! \file emit_tones.c
+ * \author Gioele Giunta
+ * \version 2.9
+ * \since 2025
+ * \brief Implementazione del modulo emit tones
+ */
+
+/* Librerie */
 #include <stdlib.h>
-#include <stddef.h>
+
+/* Headers specifici */
 #include "global_parameters.h"
 #include "audio_driver.h"
 #include "serial_bridge.h"
 #include "leds.h"
+#include "emit_tones.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+/**
+ * @brief Funzione emit_tones.
+ * @param pairs Parametro pairs.
+ * @param length Parametro length.
+ * @return Valore di ritorno.
+ */
 
 
 bool emit_tones(const struct_out_tones *pairs, size_t length){

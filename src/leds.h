@@ -1,8 +1,15 @@
 /*! \file leds.h
  * \author Gioele Giunta
- * \version 1.0
- * \since 21<sup>st</sup> May 2025
+ * \version 2.8
+ * \since 2025
+ * \brief Interfaccia del modulo leds
  */
+
+/* Librerie */
+#include <Arduino.h>
+
+/* Headers specifici */
+#include "global_parameters.h"
 
  #ifndef _LEDS_H_
  #define _LEDS_H_
@@ -11,8 +18,6 @@
 extern "C" {
 #endif
  /* C Library Headers */
- #include <Arduino.h>
- #include "global_parameters.h"
  
  void turn_red(uint8_t val);
  void turn_green(uint8_t val);
@@ -25,5 +30,5 @@ extern "C" {
 
  #endif
  
- // ******************************* Gioele Giunta University Of Malta *************************************
+ /* ******************************* Gioele Giunta University Of Malta ************************************* */
  

@@ -1,15 +1,25 @@
+/*! \file bit_output_packer.h
+ * \author Gioele Giunta
+ * \version 3.4
+ * \since 2025
+ * \brief Interfaccia del modulo bit output packer
+ */
+
 #ifndef BIT_OUTPUT_PACKER_H
 #define BIT_OUTPUT_PACKER_H
+/* Librerie */
+#include <stddef.h>
+#include <stdint.h>
+#include <stdbool.h>
+
+/* Headers specifici */
+#include "global_parameters.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <stddef.h>
-#include <stdint.h>
-#include <stdbool.h>
 
-#include "global_parameters.h"
 
 /* Maximum number of ASCII characters that can be packed. */
 #define BOP_MAX_CHARS 2048
@@ -49,4 +59,3 @@ bool bit_output_packer_convert(BitOutputPacker* packer, int role);
 #endif
 
 #endif /* BIT_OUTPUT_PACKER_H */
-

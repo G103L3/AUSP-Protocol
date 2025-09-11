@@ -1,7 +1,16 @@
+/*! \file movement_sensor.h
+ * \author Gioele Giunta
+ * \version 2.5
+ * \since 2025
+ * \brief Interfaccia del modulo movement sensor
+ */
+
 #ifndef MOVEMENT_SENSOR_H
 #define MOVEMENT_SENSOR_H
-
+/* Librerie */
 #include <stdbool.h>
+
+/* Headers specifici */
 #include "global_parameters.h"
 
 #ifdef __cplusplus
@@ -19,4 +28,4 @@ bool movement_sensor_aborted(void);
 }
 #endif
 
-#endif // MOVEMENT_SENSOR_H
+#endif /* MOVEMENT_SENSOR_H */

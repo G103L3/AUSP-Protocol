@@ -1,6 +1,13 @@
+/*! \file char_packet.h
+ * \author Gioele Giunta
+ * \version 1.5
+ * \since 2025
+ * \brief Interfaccia del modulo char packet
+ */
+
 #ifndef CHAR_PACKET_H
 #define CHAR_PACKET_H
-
+/* Librerie */
 #include <stddef.h>
 #include <stdbool.h>
 
@@ -13,9 +20,9 @@ extern "C" {
 
 typedef struct {
     char buffer[CHAR_PACKET_BUFFER_SIZE];
-    size_t head;  // index of next byte to read
-    size_t tail;  // index of next free byte
-    size_t count; // number of complete packets stored
+    size_t head;  /* index of next byte to read */
+    size_t tail;  /* index of next free byte */
+    size_t count; /* number of complete packets stored */
 } CharPacket;
 
 void char_packet_init(CharPacket *cp);
@@ -27,4 +34,4 @@ size_t char_packet_count(const CharPacket *cp);
 }
 #endif
 
-#endif // CHAR_PACKET_H
+#endif /* CHAR_PACKET_H */

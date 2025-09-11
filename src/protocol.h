@@ -1,7 +1,16 @@
+/*! \file protocol.h
+ * \author Gioele Giunta
+ * \version 2.9
+ * \since 2025
+ * \brief Interfaccia del modulo protocol
+ */
+
 #ifndef PROTOCOL_H
 #define PROTOCOL_H
-
+/* Librerie */
 #include <stdbool.h>
+
+/* Headers specifici */
 #include "char_packet_router.h"
 
 #ifdef __cplusplus
@@ -25,4 +34,4 @@ void protocol_set_message_callback(ProtocolMessageCallback cb);
 }
 #endif
 
-#endif // PROTOCOL_H
+#endif /* PROTOCOL_H */

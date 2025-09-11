@@ -1,14 +1,18 @@
 /*! \file fft.c
-* \brief Functions for fft.h are adapated from COOLEY-TUKEY FFT ALGORITHM and changed slightly to work 
-* 		 better with the LPC_4088 experimental artists board.
-*/
+ * \author Gioele Giunta
+ * \version 1.7
+ * \since 2025
+ * \brief Implementazione del modulo fft
+ */
+
+/* Headers specifici */
+#include "fft.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* Header */
-#include "fft.h"
 
 complex_g3_t out[NN];	/* Output array for FFT results */
 complex_g3_t scratch[NN];	/* Scratch space for FFT computation */
@@ -23,6 +27,10 @@ complex_g3_t twiddles[NN];	/* Twiddle factors */
  * reduce the number of computations in the Fast Fourier Transform (FFT). These factors 
  * are needed to efficiently combine the DFT results of subproblems in the FFT algorithm.
 */
+/**
+ * @brief Funzione FFT_get_twiddle_factors.
+ * @param N Parametro N.
+ */
 void FFT_get_twiddle_factors (int N)
 {
 	int k;
@@ -51,6 +59,14 @@ void FFT_get_twiddle_factors (int N)
  * This function uses an in-place algorithm where the results are computed directly in the input arrays using the `scratch` 
  * space for efficient memory usage.
 */
+/**
+ * @brief Funzione FFT_calculate.
+ * @param x Parametro x.
+ * @param N Parametro N.
+ * @param X Parametro X.
+ * @param scratch Parametro scratch.
+ * @param twiddles Parametro twiddles.
+ */
 void FFT_calculate (complex_g3_t *x, long N, complex_g3_t *X, complex_g3_t *scratch, complex_g3_t *twiddles)
 {
 	int k, m, n;
@@ -111,6 +127,12 @@ void FFT_calculate (complex_g3_t *x, long N, complex_g3_t *X, complex_g3_t *scra
  * 
  * This function provides a simplified interface to perform the FFT, suitable for straightforward use cases. It wraps the operations of computing twiddle factors and executing the FFT into a single call, managing all intermediate storage internally. This is ideal for single-threaded applications where ease of use is more critical than modularity.
 */
+/**
+ * @brief Funzione FFT_simple.
+ * @param x Parametro x.
+ * @param N Parametro N.
+ * @return Valore di ritorno.
+ */
 complex_g3_t* FFT_simple (complex_g3_t* x, int N)
 {
 	FFT_get_twiddle_factors(N);

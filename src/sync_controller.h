@@ -1,3 +1,18 @@
+/*! \file sync_controller.h
+ * \author Gioele Giunta
+ * \version 2.4
+ * \since 2025
+ * \brief Interfaccia del modulo sync controller
+ */
+
+/* Librerie */
+#include <stdint.h>
+#include <stdbool.h>
+
+/* Headers specifici */
+#include "complex_g3.h"
+#include "global_parameters.h"
+
 /**
  * @file sync_controller.h
  * @brief Synchronization controller for window-based DTMF tone detection.
@@ -16,12 +31,8 @@
  extern "C" {
  #endif
  
- #include <stdint.h>
- #include <stdbool.h>
- #include "complex_g3.h"
- #include "global_parameters.h"
 
- /// Fixed size for the analysis window
+ /*/ Fixed size for the analysis window */
  #define WINDOW_SIZE G_ARRAY_SIZE
 
  
@@ -54,5 +65,5 @@ void resync_time(void);
 }
 #endif
  
- #endif // SYNC_CONTROLLER_H
+ #endif /* SYNC_CONTROLLER_H */
  
