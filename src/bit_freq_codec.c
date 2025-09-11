@@ -49,7 +49,7 @@ int interpret_bits(int freqs[3])
     /*10 = un 1; 11 = due 1; 12 = tre 1; 13 = quattro 1; 14 = cinque 1; 15 = sei 1; 16 = sette 1; 17 = 14 1; 18 = 21 1 */
     /*printf("freqs: %d %d %d\n", freqs[0], freqs[1], freqs[2]); */
         if (active[0] && active[1] && !active[2]){ 
-            /*Frequenza appartenente agli 0, si valuta quanti 0 di seguito */
+            //Frequenza appartenente agli 0, si valuta quanti 0 di seguito
             turn_green(1); 
             if(freqs[0] < MASTER_BASE + (TONE_STEP*19) && freqs[1] == MASTER_BASE){
                 return (freqs[0]-MASTER_BASE)/(TONE_STEP);
@@ -62,7 +62,7 @@ int interpret_bits(int freqs[3])
             }
         } 
         if (!active[0] && active[1] && active[2]){ 
-            /*Frequenza ppartenente agli 1, si valuta quanti 1 di seguito */
+            //Frequenza ppartenente agli 1, si valuta quanti 1 di seguito
             turn_green(1);  
             if(freqs[2] < MASTER_BASE + (TONE_STEP*19) && freqs[1] == MASTER_BASE){
                 return (freqs[2]-MASTER_BASE)/(TONE_STEP);
